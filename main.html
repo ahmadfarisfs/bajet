@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Tracker</title>
+    <link
+rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
+>
+</head>
+
+<body>
+        <nav>
+            <ul>
+                <li><hgroup>
+                    <h1>💰 Bajet</h1>
+                    <p>Never run out of money!</p>
+                  </hgroup></li>
+                
+            </ul>
+            <ul>
+                <li><a href="index.html">Welcome Faris !</a></li>
+
+        </nav>
+    <header>
+        
+            <article>
+                
+                <h4>
+                    <p id="fiscal-range" style="text-align: center;">25 January 2023 - 25 February 2024</p>
+                </h4>
+                📅 Day 6/30<progress id="progress-bar" value="16" max="30"></progress>
+
+                💸 Expense: Rp 20.000 / Rp 6.000.000<progress id="progress-bar" value="16" max="30"></progress>
+                <p id="remaining-budget">Remaining: <b style="float: right;">Rp 2.000.000</b></p>
+                
+                <p id="daily-allowance">Current Daily Allowance: <b style="float: right;">Rp 75.000</b></p>
+                <!-- <p id="total-budget">Total Budget: <b style="float: right;">$2000</b></p> -->
+                </article>
+
+            <!-- <button id="settings-button" aria-label="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2h-1.09a2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2v-1.09a2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2h1.09a2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1h.09a2 2 0 0 1 2 2v1.09a2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button> -->
+
+            <!-- <section class="add-expense">
+            <form id="add-expense-form">
+
+                <label for="expense-category">Expense Category:</label>
+                <input type="text" id="expense-category" name="expense-category" required>
+
+
+                <label for="expense-name">Expense Name:</label>
+                <input type="text" id="expense-name" name="expense-name" required>
+                
+                <label for="expense-amount">Amount:</label>
+                <input type="number" id="expense-amount" name="expense-amount" required>
+                
+                <label for="expense-date">Date:</label>
+                <input type="date" id="expense-date" name="expense-date" required>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', (event) => {
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('expense-date').value = today;
+                    });
+                </script>
+
+                <button type="submit">Add Expense</button>
+            </form>
+        </section> -->
+        
+        <section class="date-navigation" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <button id="prev-day">&lt;</button>
+            <div style="flex-grow: 1; text-align: center;" id="current-date">
+                <input aria-label="Date" type="date" id="date-input" style="border: none; text-align: center; margin: 0;">
+                <script>
+                    document.addEventListener('DOMContentLoaded', (event) => {
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('date-input').value = today;
+                    });
+                </script>
+            </div>
+            <button id="next-day">&gt;</button>
+            
+        </section>
+       
+        </header>
+        
+
+        <main>
+            <!-- <section> -->
+                <button type="submit" id="add-expense-button">✚ Add Expense</button>
+            <!-- </section> -->
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: center;">When</th>
+                        <!-- <th>📂</th> -->
+                        <th style="text-align: center;">What</th>
+                        <th style="text-align: center;">How Much</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: center;">17:30</td>
+                        <!-- <td></td> -->
+                        <td style="text-align: center;">🍽️ Makan Siang</td>
+                        <td style="text-align: center;">Rp 150.000</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">17:10</td>
+                        <!-- <td>⛽️</td> -->
+                        <td style="text-align: center;">⛽️ Bensin Motor</td>
+                        <td style="text-align: center;">Rp 20.000</td>
+                    </tr>
+                  
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <th scope="row" colspan="2" style="text-align: center;">Total</th>
+                      <td style="text-align: center;">Rp 170.000</td>
+                    </tr>
+                  </tfoot>
+            </table>
+        </main>
+   <footer>
+        <p style="text-align: center;">&copy; 2024 Bajet</p>
+   </footer>
+</body>
+</html>
