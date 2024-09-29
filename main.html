@@ -11,18 +11,20 @@ href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
 </head>
 
 <body>
-        <nav>
-            <ul>
-                <li><hgroup>
+        
+        <header>
+              <nav>
+                <ul>
+                  <li><hgroup>
                     <h1>💰 Bajet</h1>
                     <p>Never run out of money!</p>
                   </hgroup></li>
-                
-            </ul>
-            <ul>
-                <li><a href="index.html">Welcome Faris !</a></li>
-
-        </nav>
+                </ul>
+                <ul>
+                 <li><button class="secondary">Hi Faris !</button></li>
+                </ul>
+              </nav>
+        </header>
     <header>
         
             <article>
@@ -46,32 +48,7 @@ href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
                 </svg>
             </button> -->
 
-            <!-- <section class="add-expense">
-            <form id="add-expense-form">
-
-                <label for="expense-category">Expense Category:</label>
-                <input type="text" id="expense-category" name="expense-category" required>
-
-
-                <label for="expense-name">Expense Name:</label>
-                <input type="text" id="expense-name" name="expense-name" required>
-                
-                <label for="expense-amount">Amount:</label>
-                <input type="number" id="expense-amount" name="expense-amount" required>
-                
-                <label for="expense-date">Date:</label>
-                <input type="date" id="expense-date" name="expense-date" required>
-                
-                <script>
-                    document.addEventListener('DOMContentLoaded', (event) => {
-                        const today = new Date().toISOString().split('T')[0];
-                        document.getElementById('expense-date').value = today;
-                    });
-                </script>
-
-                <button type="submit">Add Expense</button>
-            </form>
-        </section> -->
+          
         
         <section class="date-navigation" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
             <button id="prev-day">&lt;</button>
@@ -92,8 +69,27 @@ href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
         
 
         <main>
+            <dialog>
+                <article>
+                  <header>
+                    <button aria-label="Close" rel="prev"></button>
+                    <p>
+                      <strong>🗓️ Thank You for Registering!</strong>
+                    </p>
+                  </header>
+                  <p>
+                    We're excited to have you join us for our
+                    upcoming event. Please arrive at the museum 
+                    on time to check in and get started.
+                  </p>
+                  <ul>
+                    <li>Date: Saturday, April 15</li>
+                    <li>Time: 10:00am - 12:00pm</li>
+                  </ul>
+                </article>
+              </dialog>
             <!-- <section> -->
-                <button type="submit" id="add-expense-button">✚ Add Expense</button>
+                <button type="submit" id="add-transaction-button" onclick="window.location.href='transaction.html'">✚ Add Transaction</button>
             <!-- </section> -->
             <table>
                 <thead>
