@@ -2,6 +2,9 @@ import logging
 from db.base import userDB  # Adjust the import path as necessary
 import datetime
 import bcrypt
+import pytz
+import os
+from tzlocal import get_localzone
 
 async def get_by_email(email: str):
     user = await userDB.find_one({"email": email})
@@ -29,14 +32,17 @@ async def authenticate_user( email: str, password: str):
 async def add_user( first_name: str, last_name: str, email: str, password: str) :
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     password = hashed_password.decode('utf-8')
+    timezone = os.getenv('TIMEZONE', 'Asia/Jakarta')
+    local_tz = pytz.timezone(timezone)
     user = {
         "first_name": first_name,
         "last_name": last_name,
         "email": email,
         "password": password,
-        "created_at": datetime.datetime.now(),
+        "created_at": datetime.datetime.now(local_tz).isoformat(),
     }
     result = await userDB.insert_one(user)
     new_user = await userDB.find_one({"_id": result.inserted_id})
     logging.info(f"User added with id: {result.inserted_id}")
+    logging.info(f"user added: {new_user}")
     return new_user

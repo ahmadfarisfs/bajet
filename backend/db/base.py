@@ -6,12 +6,20 @@ import motor.motor_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import asyncio
 import sys
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
 mongodb_url = os.getenv("MONGODB_URL")
 if not mongodb_url:
     raise ValueError("MONGODB_URL environment variable not set")
-db = AsyncIOMotorClient(mongodb_url)#.get_database()
+
+mongodb_db = os.getenv("MONGODB_DBNAME")
+if not mongodb_db:
+    raise ValueError("MONGODB_DBNAME environment variable not set")
+
+db = AsyncIOMotorClient(mongodb_url)[mongodb_db]
 userDB = db.users
 
 # class MongoManager:
