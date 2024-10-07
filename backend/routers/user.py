@@ -41,11 +41,11 @@ async def register_user(
             raise HTTPException(status_code=400, detail="Failed to create user")
         
         return UserResponse(
-            id=new_user.id,
-            email=new_user.email,
-            first_name=new_user.first_name,
-            last_name=new_user.last_name,
-            created_at=new_user.created_at
+            id=str(new_user["_id"]),
+            email=new_user["email"],
+            first_name=new_user["first_name"],
+            last_name=new_user["last_name"],
+            created_at=new_user["created_at"]
         )
     except Exception as e:
         logging.error(e)

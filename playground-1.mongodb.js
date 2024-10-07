@@ -9,27 +9,8 @@ const collection = 'users';
 use(database);
 
 // Create a new collection.
-// db.createCollection(collection);
-// Create a unique index on the "email" column in the "users" collection.
-db.users.createIndex({ email: 1 }, { unique: true });
-db.runCommand({
-  collMod: collection,
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["email"],
-      properties: {
-        email: {
-          bsonType: "string",
-          pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
-          description: "must be a valid email address and is required",
-        }
-      }
-    }
-  },
-  validationLevel: "strict",
-  validationAction: "error"
-});
+db.createCollection(collection);
+
 // The prototype form to create a collection:
 /* db.createCollection( <name>,
   {
