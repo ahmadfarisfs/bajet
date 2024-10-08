@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+<link
+rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
+>
+</head>
+<body>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <div id="g_id_onload"
+        data-client_id="172246527225-ljdl5v9h8nn2g2nf8jg69tugfgg1hlud.apps.googleusercontent.com"
+        data-login_uri="http://localhost:8080/auth/login"
+        data-auto_prompt="false">
+    </div>
+    <header>
+        <nav>
+          <ul>
+            <li><hgroup>
+              <h1>💰 Bajet</h1>
+              <p>Never run out of money!</p>
+            </hgroup></li>
+          </ul>
+          
+        </nav>
+  </header>
+    <main>
+      <div class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="outline"
+      data-text="sign_in_with"
+      data-shape="rectangular"
+      data-logo_alignment="left">
+  </div>
+        <!-- <form>
+            
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Email"
+              autocomplete="email"
+              required
+            />
+          
+            
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Password"
+              autocomplete="current-password"
+              required
+            />
+          
+           
+            <button type="submit">Login 🔑</button>
+            <button type="button" onclick="window.location.href='signup.html'">Sign Up</button>
+        </form> -->
+    </main>
+    <footer>
+        <p style="text-align: center;">&copy; 2024 Bajet</p>
+    </footer>
+</body>
+</html>
