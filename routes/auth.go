@@ -97,7 +97,7 @@ func (ar *AuthRoutes) handleGoogleCallback(c echo.Context) error {
 	sess.Values["user_info"] = string(userInfo)
 	sess.Save(c.Request(), c.Response())
 
-	return c.Redirect(http.StatusTemporaryRedirect, "/profile")
+	return c.Redirect(http.StatusTemporaryRedirect, "/main")
 }
 
 // Protected profile page

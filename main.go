@@ -7,7 +7,7 @@ import (
 	"bajetapp/config"
 	"bajetapp/routes"
 	"bajetapp/utils"
-	"bajetapp/views"
+	"bajetapp/views/pages"
 
 	"github.com/a-h/templ"
 	"github.com/gorilla/sessions"
@@ -45,19 +45,30 @@ func main() {
 	}))
 
 	// Routes
-	e.GET("/", handleMain)
+	e.GET("/", handleLogin)
+	e.GET("/main", handleMain)
 	routes.NewAuthRoutes(config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL, e)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
 
-// Home page
 func handleMain(c echo.Context) error {
+	if !utils.IsAuthenticated(c) {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+	}
+
+	cpmnt := pages.MainPage()
+	Render(c, &cpmnt)
+	return nil
+}
+
+// Login page
+func handleLogin(c echo.Context) error {
 	if utils.IsAuthenticated(c) {
 		c.Redirect(http.StatusTemporaryRedirect, "/profile")
 	}
 
-	cpmnt := views.Index("Home", "Welcome ")
+	cpmnt := pages.Login()
 	Render(c, &cpmnt)
 	return nil
 }
