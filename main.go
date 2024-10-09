@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
+	"bajetapp/config"
 	"bajetapp/routes"
 	"bajetapp/utils"
 	"bajetapp/views"
@@ -25,22 +25,28 @@ func init() {
 }
 
 func main() {
+
+	config, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("error loading config: %w", err)
+	}
+
 	e := echo.New()
 
 	// Add logging middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte(config.SessionSecret))))
 
-	// Initialize session middleware
-	sessionSecret := os.Getenv("SESSION_SECRET")
-	if sessionSecret == "" {
-		log.Fatal("SESSION_SECRET environment variable is required")
-	}
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte(sessionSecret))))
+	staticRoot := e.Group("/static")
+	staticRoot.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "./views/static",
+		Browse: false,
+	}))
 
 	// Routes
 	e.GET("/", handleMain)
-	routes.NewAuthRoutes(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"), os.Getenv("REDIRECT_URL"), os.Getenv("OAUTH_STATE_STRING"), e)
+	routes.NewAuthRoutes(config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL, e)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
@@ -50,8 +56,7 @@ func handleMain(c echo.Context) error {
 	if utils.IsAuthenticated(c) {
 		c.Redirect(http.StatusTemporaryRedirect, "/profile")
 	}
-	// html := `<html><body><a href="/auth/login">Google Log In</a></body></html>`
-	// return c.HTML(http.StatusOK, html)
+
 	cpmnt := views.Index("Home", "Welcome ")
 	Render(c, &cpmnt)
 	return nil
