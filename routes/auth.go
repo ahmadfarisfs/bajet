@@ -16,10 +16,9 @@ import (
 
 type AuthRoutes struct {
 	googleOauthConfig *oauth2.Config
-	oauthStateString  string
 }
 
-func NewAuthRoutes(googleClientID, googleClientSecret, redirectURL, stateString string, e *echo.Echo) *AuthRoutes {
+func NewAuthRoutes(googleClientID, googleClientSecret, redirectURL string, e *echo.Echo) *AuthRoutes {
 	route := &AuthRoutes{
 		googleOauthConfig: &oauth2.Config{
 			ClientID:     googleClientID,
@@ -31,7 +30,6 @@ func NewAuthRoutes(googleClientID, googleClientSecret, redirectURL, stateString 
 			},
 			Endpoint: google.Endpoint,
 		},
-		oauthStateString: stateString,
 	}
 	route.registerRoutes(e)
 	return route
@@ -46,16 +44,31 @@ func (ar *AuthRoutes) registerRoutes(e *echo.Echo) {
 
 // Google login handler
 func (ar *AuthRoutes) handleGoogleLogin(c echo.Context) error {
-	url := ar.googleOauthConfig.AuthCodeURL(ar.oauthStateString)
+	// Generate a random OAuth state string
+	oauthStateString, err := utils.GenerateRandomString(32)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to generate OAuth state string")
+	}
+	// Store the OAuth state string in the session
+	sess, _ := session.Get("session", c)
+	sess.Values["oauthStateString"] = oauthStateString
+	if err := sess.Save(c.Request(), c.Response()); err != nil {
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to save session: %s", err.Error()))
+	}
+
+	url := ar.googleOauthConfig.AuthCodeURL(oauthStateString)
 	return c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 // Google callback handler
 func (ar *AuthRoutes) handleGoogleCallback(c echo.Context) error {
 	state := c.QueryParam("state")
-	if state != ar.oauthStateString {
-		log.Println("Invalid OAuth state")
-		return c.Redirect(http.StatusTemporaryRedirect, "/")
+
+	// Retrieve the OAuth state string from the session
+	sess, _ := session.Get("session", c)
+	oauthStateString, ok := sess.Values["oauthStateString"].(string)
+	if !ok || state != oauthStateString {
+		return c.String(http.StatusBadRequest, "Invalid OAuth state string")
 	}
 
 	code := c.QueryParam("code")
@@ -80,7 +93,7 @@ func (ar *AuthRoutes) handleGoogleCallback(c echo.Context) error {
 	}
 
 	// Store the user info in the session
-	sess, _ := session.Get("session", c)
+	sess, _ = session.Get("session", c)
 	sess.Values["user_info"] = string(userInfo)
 	sess.Save(c.Request(), c.Response())
 
