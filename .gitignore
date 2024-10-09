@@ -14,7 +14,7 @@ go.work
 # Go modules
 go.mod
 go.sum
-
+*.env
 # Dependency directories (remove the comment below if you use vendoring)
 vendor/
 
