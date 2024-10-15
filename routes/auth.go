@@ -1,35 +1,22 @@
 package routes
 
 import (
+	"bajetapp/services"
 	"bajetapp/utils"
-	"context"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type AuthRoutes struct {
-	googleOauthConfig *oauth2.Config
+	svc *services.AuthService
 }
 
-func NewAuthRoutes(googleClientID, googleClientSecret, redirectURL string, e *echo.Echo) *AuthRoutes {
+func NewAuthRoutes(svc *services.AuthService, e *echo.Echo) *AuthRoutes {
 	route := &AuthRoutes{
-		googleOauthConfig: &oauth2.Config{
-			ClientID:     googleClientID,
-			ClientSecret: googleClientSecret,
-			RedirectURL:  redirectURL,
-			Scopes: []string{
-				"https://www.googleapis.com/auth/userinfo.profile",
-				"https://www.googleapis.com/auth/userinfo.email",
-			},
-			Endpoint: google.Endpoint,
-		},
+		svc: svc,
 	}
 	route.registerRoutes(e)
 	return route
@@ -38,65 +25,29 @@ func NewAuthRoutes(googleClientID, googleClientSecret, redirectURL string, e *ec
 func (ar *AuthRoutes) registerRoutes(e *echo.Echo) {
 	e.GET("/auth/login", ar.handleGoogleLogin)
 	e.GET("/auth/callback", ar.handleGoogleCallback)
-	e.GET("/auth/logout", ar.handleLogout)
-	e.GET("/profile", ar.handleProfile)
+	e.GET("/auth/logout", ar.handleLogout) //TODO:use auth middleware
+	e.GET("/profile", ar.handleProfile)    //TODO:use auth middleware
 }
 
 // Google login handler
 func (ar *AuthRoutes) handleGoogleLogin(c echo.Context) error {
-	// Generate a random OAuth state string
-	oauthStateString, err := utils.GenerateRandomString(32)
+	redirectUrl, err := ar.svc.GoogleLogin(c)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to generate OAuth state string")
+		// TODO: change with error template
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("failed to save session: %s", err.Error()))
 	}
-	// Store the OAuth state string in the session
-	sess, _ := session.Get("session", c)
-	sess.Values["oauthStateString"] = oauthStateString
-	if err := sess.Save(c.Request(), c.Response()); err != nil {
-		return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to save session: %s", err.Error()))
-	}
-
-	url := ar.googleOauthConfig.AuthCodeURL(oauthStateString)
-	return c.Redirect(http.StatusTemporaryRedirect, url)
+	return c.Redirect(http.StatusTemporaryRedirect, redirectUrl)
 }
 
 // Google callback handler
 func (ar *AuthRoutes) handleGoogleCallback(c echo.Context) error {
 	state := c.QueryParam("state")
-
-	// Retrieve the OAuth state string from the session
-	sess, _ := session.Get("session", c)
-	oauthStateString, ok := sess.Values["oauthStateString"].(string)
-	if !ok || state != oauthStateString {
-		return c.String(http.StatusBadRequest, "Invalid OAuth state string")
-	}
-
 	code := c.QueryParam("code")
-	token, err := ar.googleOauthConfig.Exchange(context.Background(), code)
+	_, err := ar.svc.ProcessGoogleCallback(c, state, code)
 	if err != nil {
-		log.Println("Failed to exchange token:", err)
-		return c.Redirect(http.StatusTemporaryRedirect, "/")
+		// TODO: change with error template
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("failed to process Google callback: %s", err.Error()))
 	}
-
-	client := ar.googleOauthConfig.Client(context.Background(), token)
-	userInfoResp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		log.Println("Failed to get user info:", err)
-		return c.Redirect(http.StatusTemporaryRedirect, "/")
-	}
-	defer userInfoResp.Body.Close()
-
-	userInfo, err := io.ReadAll(userInfoResp.Body)
-	if err != nil {
-		log.Println("Failed to read user info:", err)
-		return c.Redirect(http.StatusTemporaryRedirect, "/")
-	}
-
-	// Store the user info in the session
-	sess, _ = session.Get("session", c)
-	sess.Values["user_info"] = string(userInfo)
-	sess.Save(c.Request(), c.Response())
-
 	return c.Redirect(http.StatusTemporaryRedirect, "/main")
 }
 

@@ -9,6 +9,8 @@ import (
 	"bajetapp/utils"
 	"bajetapp/views/pages"
 
+	"bajetapp/db"
+
 	"github.com/a-h/templ"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -25,10 +27,15 @@ func init() {
 }
 
 func main() {
-
 	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("error loading config: %w", err)
+	}
+
+	// Initialize Database
+	client, mongo, err := db.ConnectMongoDB(config.MongoURI, config.MongoDatabase)
+	if err != nil {
+		log.Fatal("error connecting to MongoDB: %w", err)
 	}
 
 	e := echo.New()
