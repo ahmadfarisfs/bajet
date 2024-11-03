@@ -32,10 +32,17 @@ func main() {
 	}
 
 	e := echo.New()
-
-	// Add logging middleware
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(10)))
+	e.Use(middleware.RequestID())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.Gzip())
+	e.Use(middleware.CORS())
+	e.Use(middleware.Secure())
+	e.Use(middleware.BodyLimit("2M"))
+	e.Use(middleware.CSRF())
+	e.Use(middleware.RemoveTrailingSlash())
+	// e.Use(middleware.ContextTimeout(config.ContextTimeout))
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(config.SessionSecret))))
 
 	staticRoot := e.Group("/static")
