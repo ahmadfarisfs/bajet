@@ -13,6 +13,8 @@ type Config struct {
 	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
 	RedirectURL        string `mapstructure:"GOOGLE_LOGIN_REDIRECT_URL"`
+	MongoURI           string `mapstructure:"MONGO_URI"`
+	MongoDatabase      string `mapstructure:"MONGO_DATABASE"`
 }
 
 func LoadConfig() (*Config, error) {
