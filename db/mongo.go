@@ -30,8 +30,7 @@ func ConnectMongoDB(uri, dbName string) (*mongo.Client, *mongo.Database, error) 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to ping MongoDB: %v", err)
 	}
-
-	log.Println("Connected to MongoDB")
+	fmt.Printf("Connected to MongoDB: %s, Database: %s\n", uri, dbName)
 	MongoClient = client
 	MongoDatabase = client.Database(dbName)
 	return client, MongoDatabase, nil

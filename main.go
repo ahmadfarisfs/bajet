@@ -3,15 +3,19 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"bajetapp/config"
+	"bajetapp/mwr"
 	"bajetapp/routes"
+	"bajetapp/services"
 	"bajetapp/utils"
 	"bajetapp/views/pages"
 
 	"bajetapp/db"
 
 	"github.com/a-h/templ"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
@@ -26,6 +30,18 @@ func init() {
 	}
 }
 
+type GoPlaygorundValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *GoPlaygorundValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
+
 func main() {
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -33,7 +49,7 @@ func main() {
 	}
 
 	// Initialize Database
-	client, mongo, err := db.ConnectMongoDB(config.MongoURI, config.MongoDatabase)
+	_, mongo, err := db.ConnectMongoDB(config.MongoURI, config.MongoDatabase)
 	if err != nil {
 		log.Fatal("error connecting to MongoDB: %w", err)
 	}
@@ -47,10 +63,25 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Secure())
 	e.Use(middleware.BodyLimit("2M"))
-	e.Use(middleware.CSRF())
+	e.Use(middleware.CSRFWithConfig(
+		middleware.CSRFConfig{
+			TokenLookup: "form:_csrf",
+		},
+	))
 	e.Use(middleware.RemoveTrailingSlash())
-	// e.Use(middleware.ContextTimeout(config.ContextTimeout))
+	e.Use(middleware.ContextTimeout(time.Second * time.Duration(config.ContextTimeoutSecond)))
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(config.SessionSecret))))
+
+	e.Debug = true
+	e.Validator = &GoPlaygorundValidator{validator: validator.New()}
+	// e.HTTPErrorHandler = func(err error, c echo.Context) {
+	// 	code := http.StatusInternalServerError
+	// 	if he, ok := err.(*echo.HTTPError); ok {
+	// 		code = he.Code
+	// 	}
+	// 	c.Logger().Error(err)
+	// 	// c.HTML(code, "error", nil)
+	// }
 
 	staticRoot := e.Group("/static")
 	staticRoot.Use(middleware.StaticWithConfig(middleware.StaticConfig{
@@ -60,8 +91,14 @@ func main() {
 
 	// Routes
 	e.GET("/", handleLogin)
-	e.GET("/main", handleMain)
-	routes.NewAuthRoutes(config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL, e)
+	e.GET("/main", handleMain, mwr.AuthMiddleware)
+	e.GET("/add", handleAddPage, mwr.AuthMiddleware)
+
+	authService := services.NewAuthService(mongo, config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL)
+	trxService := services.NewTransactionService(mongo)
+
+	routes.NewAuthRoutes(authService, e)
+	routes.NewTransactionRoutes(trxService, e)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
@@ -76,10 +113,20 @@ func handleMain(c echo.Context) error {
 	return nil
 }
 
+func handleAddPage(c echo.Context) error {
+	if !utils.IsAuthenticated(c) {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+	}
+
+	cpmnt := pages.AddTransaction(c.Get(middleware.DefaultCSRFConfig.ContextKey).(string))
+	Render(c, &cpmnt)
+	return nil
+}
+
 // Login page
 func handleLogin(c echo.Context) error {
 	if utils.IsAuthenticated(c) {
-		c.Redirect(http.StatusTemporaryRedirect, "/profile")
+		c.Redirect(http.StatusTemporaryRedirect, "/main")
 	}
 
 	cpmnt := pages.Login()

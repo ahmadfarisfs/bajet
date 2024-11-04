@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	SessionSecret      string `mapstructure:"SESSION_SECRET"`
-	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
-	RedirectURL        string `mapstructure:"GOOGLE_LOGIN_REDIRECT_URL"`
-	MongoURI           string `mapstructure:"MONGO_URI"`
-	MongoDatabase      string `mapstructure:"MONGO_DATABASE"`
+	SessionSecret        string `mapstructure:"SESSION_SECRET" validate:"required"`
+	GoogleClientID       string `mapstructure:"GOOGLE_CLIENT_ID" validate:"required"`
+	GoogleClientSecret   string `mapstructure:"GOOGLE_CLIENT_SECRET" validate:"required"`
+	RedirectURL          string `mapstructure:"GOOGLE_LOGIN_REDIRECT_URL" validate:"required,url"`
+	MongoURI             string `mapstructure:"MONGO_URI" validate:"required,url"`
+	MongoDatabase        string `mapstructure:"MONGO_DATABASE" validate:"required"`
+	ContextTimeoutSecond int    `mapstructure:"CONTEXT_TIMEOUT_SECOND" validate:"gt=0"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -30,18 +32,10 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
-	// Validate required environment variables
-	if config.SessionSecret == "" {
-		return nil, fmt.Errorf("SESSION_SECRET environment variable is required")
-	}
-	if config.GoogleClientID == "" {
-		return nil, fmt.Errorf("GOOGLE_CLIENT_ID environment variable is required")
-	}
-	if config.GoogleClientSecret == "" {
-		return nil, fmt.Errorf("GOOGLE_CLIENT_SECRET environment variable is required")
-	}
-	if config.RedirectURL == "" {
-		return nil, fmt.Errorf("GOOGLE_LOGIN_REDIRECT_URL environment variable is required")
+	// Validate the config using the validator package
+	validate := validator.New()
+	if err := validate.Struct(&config); err != nil {
+		return nil, fmt.Errorf("config validation failed: %v", err)
 	}
 
 	return &config, nil
