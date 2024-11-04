@@ -60,20 +60,15 @@ templ AddTransaction(csrfToken string) {
 				</div>
 				<label for="amount">How Much ?</label>
 				<!-- Include Cleave.js library -->
-				<script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+				// <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
 				<!-- Input field for amount with Indonesian Rupiah formatting -->
-				<input type="text" id="amount" name="amount" required/>
+				<fieldset role="group">
+				<input  value="Rp" disabled style="width: 15%;"/>
+					<input type="number" id="amount" name="amount" required style="text-align: right;" inputmode="decimal" pattern="[0-9]*" />		
+					<input  value="K" disabled style="width: 15%;"/>
+				</fieldset>
 				<script>
-                    document.addEventListener('DOMContentLoaded', (event) => {
-                        new Cleave('#amount', {
-                            numeral: true,
-                            numeralThousandsGroupStyle: 'thousand',
-                            numeralDecimalMark: ',',
-                            delimiter: '.',
-                            prefix: 'Rp ',
-                            rawValueTrimPrefix: true
-                        });
-                    });
+                    
                 </script>
 				<label for="expense-date">When ?</label>
 				<input type="datetime-local" id="expense-date" name="expense-date" required/>
@@ -87,7 +82,7 @@ templ AddTransaction(csrfToken string) {
                     });
                 </script>
 				<label for="trx-type">Submit !</label>
-				<button type="submit" id="submit-button" disabled>Add Expense</button>
+				<button type="submit" id="submit-button" >Add Expense</button>
 				<script>
                     document.addEventListener('DOMContentLoaded', (event) => {
                         const submitButton = document.getElementById('submit-button');
