@@ -1,0 +1,40 @@
+package component
+
+templ Base() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Bajet App</title>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
+			/>
+			<link href="/static/main.css" rel="stylesheet"/>
+			<script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
+
+		</head>
+		<body>
+			<header>
+				<nav>
+					<ul>
+						<li>
+							<hgroup>
+								<h1>💰 Bajet</h1>
+								<p>Never run out of money!</p>
+							</hgroup>
+						</li>
+					</ul>
+					
+				</nav>
+			</header>
+			<main>
+				{ children... }
+			</main>
+			<footer>
+				<p style="text-align: center;">&copy; 2024 Bajet</p>
+			</footer>
+		</body>
+	</html>
+}
