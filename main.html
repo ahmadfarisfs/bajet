@@ -51,7 +51,15 @@ href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
           
         
         <section class="date-navigation" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-            <button id="prev-day">&lt;</button>
+            <button id="prev-day" onclick="changeDate(-1)">&lt;</button>
+            <script>
+              function changeDate(days) {
+                const dateInput = document.getElementById('date-input');
+                const currentDate = new Date(dateInput.value);
+                currentDate.setDate(currentDate.getDate() + days);
+                dateInput.value = currentDate.toISOString().split('T')[0];
+              }
+            </script>
             <div style="flex-grow: 1; text-align: center;" id="current-date">
                 <input aria-label="Date" type="date" id="date-input" style="border: none; text-align: center; margin: 0;">
                 <script>
@@ -61,7 +69,7 @@ href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
                     });
                 </script>
             </div>
-            <button id="next-day">&gt;</button>
+            <button id="next-day" onclick="changeDate(1)">&gt;</button>
             
         </section>
        
