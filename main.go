@@ -14,13 +14,18 @@ import (
 
 	"bajetapp/db"
 
-	"github.com/a-h/templ"
+	"cloud.google.com/go/civil"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+)
+
+var (
+	authService *services.AuthService
+	trxService  *services.TransactionService
 )
 
 func init() {
@@ -94,8 +99,8 @@ func main() {
 	e.GET("/main", handleMain, mwr.AuthMiddleware)
 	e.GET("/add", handleAddPage, mwr.AuthMiddleware)
 
-	authService := services.NewAuthService(mongo, config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL)
-	trxService := services.NewTransactionService(mongo)
+	authService = services.NewAuthService(mongo, config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL)
+	trxService = services.NewTransactionService(mongo)
 
 	routes.NewAuthRoutes(authService, e)
 	routes.NewTransactionRoutes(trxService, e)
@@ -106,10 +111,20 @@ func main() {
 func handleMain(c echo.Context) error {
 	if !utils.IsAuthenticated(c) {
 		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return nil
 	}
 
-	cpmnt := pages.MainPage()
-	Render(c, &cpmnt)
+	userInfo, err := mwr.GetLoginInfo(c)
+	if err != nil {
+		return err
+	}
+
+	trxs, err := trxService.GetTransactions(c.Request().Context(), userInfo.ID, civil.DateOf(time.Now()), civil.DateOf(time.Now()))
+	if err != nil {
+		return err
+	}
+	cpmnt := pages.MainPage(trxs)
+	utils.Render(c, &cpmnt)
 	return nil
 }
 
@@ -119,8 +134,7 @@ func handleAddPage(c echo.Context) error {
 		[]string{"🍔 Food", "🚗 Transport", "🎉 Entertainment", "🛍️ Shopping", "🔧 Others"},
 		[]string{"💼 Salary", "📈 Business", "📊 Investment", "🎁 Gift", "🏥 Other"},
 	)
-
-	Render(c, &cpmnt)
+	utils.Render(c, &cpmnt)
 	return nil
 }
 
@@ -131,10 +145,6 @@ func handleLogin(c echo.Context) error {
 	}
 
 	cpmnt := pages.Login()
-	Render(c, &cpmnt)
+	utils.Render(c, &cpmnt)
 	return nil
-}
-
-func Render(echoCtx echo.Context, component *templ.Component) {
-	(*component).Render(echoCtx.Request().Context(), echoCtx.Response().Writer)
 }

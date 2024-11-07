@@ -1,8 +1,12 @@
 package pages
 
-import "bajetapp/views/component"
+import (
+	"bajetapp/views/component"
+	"bajetapp/model"
+	"strconv"
+)
 
-templ MainPage() {
+templ MainPage(trxList []model.Transaction) {
 	@component.Base() {
 		<article>
 			<h4>
@@ -39,23 +43,33 @@ templ MainPage() {
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td style="text-align: center;">17:30</td>
-					<!-- <td></td> -->
-					<td style="text-align: center;">🍽️ Makan Siang</td>
-					<td style="text-align: center;">Rp 150.000</td>
-				</tr>
-				<tr>
-					<td style="text-align: center;">17:10</td>
-					<!-- <td>⛽️</td> -->
-					<td style="text-align: center;">⛽️ Bensin Motor</td>
-					<td style="text-align: center;">Rp 20.000</td>
-				</tr>
+					{{ totalAmount := 0 }}
+					for _, trx := range trxList {
+						{{ totalAmount += trx.Amount }}
+						<tr>
+							<td style="text-align: center;">{ trx.TransactionAt.Format("15:04") }</td>
+							<td style="text-align: center;">{ string([]rune(trx.Category)[0])+" "+trx.Description }</td>
+							<td style="text-align: center;">Rp { strconv.Itoa(trx.Amount) }</td>
+						</tr>
+					}
+				
+				// <tr>
+				// 	<td style="text-align: center;">17:30</td>
+				// 	<!-- <td></td> -->
+				// 	<td style="text-align: center;">🍽️ Makan Siang</td>
+				// 	<td style="text-align: center;">Rp 150.000</td>
+				// </tr>
+				// <tr>
+				// 	<td style="text-align: center;">17:10</td>
+				// 	<!-- <td>⛽️</td> -->
+				// 	<td style="text-align: center;">⛽️ Bensin Motor</td>
+				// 	<td style="text-align: center;">Rp 20.000</td>
+				// </tr>
 			</tbody>
 			<tfoot>
 				<tr>
 					<th scope="row" colspan="2" style="text-align: center;">Total</th>
-					<td style="text-align: center;">Rp 170.000</td>
+					<td style="text-align: center;">Rp { strconv.Itoa(totalAmount) }</td>
 				</tr>
 			</tfoot>
 		</table>

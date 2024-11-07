@@ -6,6 +6,7 @@ import (
 	"bajetapp/services"
 	"bajetapp/utils"
 	"fmt"
+	"net/http"
 
 	"cloud.google.com/go/civil"
 	"github.com/labstack/echo/v4"
@@ -65,8 +66,16 @@ func (tr *TransactionRoutes) handleCreateTransaction(c echo.Context) error {
 	}
 
 	trx.UserID = userInfo.ID
-	return tr.tsvc.CreateTransaction(c.Request().Context(), trx)
-
+	tr.tsvc.CreateTransaction(c.Request().Context(), trx)
+	return c.Redirect(http.StatusSeeOther, "/main")
+	// todayDate := civil.DateOf(time.Now())
+	// trxs, err := tr.tsvc.GetTransactions(c.Request().Context(), userInfo.ID, todayDate, todayDate)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get transactions: %w", err)
+	// }
+	// cpmnt := pages.MainPage(trxs)
+	// utils.Render(c, &cpmnt)
+	// return nil
 }
 
 func (tr *TransactionRoutes) handleDeleteTransaction(c echo.Context) error {
