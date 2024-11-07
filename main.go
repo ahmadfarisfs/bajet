@@ -123,7 +123,7 @@ func handleMain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	cpmnt := pages.MainPage(trxs)
+	cpmnt := pages.MainPage(civil.DateOf(time.Now()), trxs)
 	utils.Render(c, &cpmnt)
 	return nil
 }
