@@ -40,12 +40,12 @@ func (tr *TransactionRoutes) handleGetTransactions(c echo.Context) error {
 		return fmt.Errorf("failed to bind validate payload: %w", err)
 	}
 
-	userInfo := mwr.GetLoginInfo(c)
-	if userInfo == nil {
-		return fmt.Errorf("failed to get login info")
+	userInfo, err := mwr.GetLoginInfo(c)
+	if err != nil {
+		return fmt.Errorf("failed to get login info: %w", err)
 	}
 
-	_, err := tr.tsvc.GetTransactions(c.Request().Context(), userInfo.ID, req.StartDate, req.EndDate)
+	_, err = tr.tsvc.GetTransactions(c.Request().Context(), userInfo.ID, req.StartDate, req.EndDate)
 	if err != nil {
 		return fmt.Errorf("failed to get transactions: %w", err)
 	}
@@ -54,15 +54,14 @@ func (tr *TransactionRoutes) handleGetTransactions(c echo.Context) error {
 }
 
 func (tr *TransactionRoutes) handleCreateTransaction(c echo.Context) error {
-
 	var trx model.Transaction
 	if err := utils.BindValidate(c, &trx); err != nil {
 		return fmt.Errorf("failed to bind validate payload: %w", err)
 	}
 
-	userInfo := mwr.GetLoginInfo(c)
-	if userInfo == nil {
-		return fmt.Errorf("failed to get login info")
+	userInfo, err := mwr.GetLoginInfo(c)
+	if err != nil {
+		return fmt.Errorf("failed to get login info: %w", err)
 	}
 
 	trx.UserID = userInfo.ID

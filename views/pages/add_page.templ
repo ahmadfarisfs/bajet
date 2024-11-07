@@ -1,94 +1,72 @@
 
 package pages
 
-import "bajetapp/views/component"
+import (
+	"bajetapp/views/component"
+	"strconv"
+)
 
-templ AddTransaction(csrfToken string) {
+templ AddTransaction(csrfToken string, expenseCategory []string, incomeCategory []string) {
 	@component.Base() {
 		<section class="add-expense">
 			<form id="add-expense" method="POST" action="/trx">
-                <input type="hidden" name="_csrf" value={ csrfToken }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
 				<label for="description">What ?</label>
-				<input type="text" id="description" name="expense-name" required autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length);"/>
+				<input type="text" id="description" name="description" required autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length);"/>
 				<div style="display: flex; justify-content: space-between;">
 					<fieldset id="expense-category" style="flex: 1; margin-right: 10px;">
 						<legend>Expense:</legend>
-						<label for="radio-1">
-							<input type="radio" id="radio-1" name="radio" value="food" checked/>
-							🍽️ Food
-						</label>
-						<label for="radio-2">
-							<input type="radio" id="radio-2" name="radio" value="transport"/>
-							🚗 Transport
-						</label>
-						<label for="radio-3">
-							<input type="radio" id="radio-3" name="radio" value="entertainment"/>
-							🎬 Entertainment
-						</label>
-						<label for="radio-4">
-							<input type="radio" id="radio-4" name="radio" value="utilities"/>
-							💡 Utilities
-						</label>
-						<label for="radio-6">
-							<input type="radio" id="radio-6" name="radio" value="health"/>
-							🏥 Other
-						</label>
+						for idx,item:= range expenseCategory {
+							<label for={ "radio-exp-"+strconv.Itoa(idx) } >
+								<input type="radio" id={ "radio-exp-"+strconv.Itoa(idx) } name="category" value={ item }/>
+								{ item }
+							</label>
+						}
 					</fieldset>
 					<fieldset id="income-category" style="flex: 1; margin-left: 10px;">
 						<legend>Income:</legend>
-						<label for="radio-7">
-							<input type="radio" id="radio-7" name="radio" value="salary"/>
-							💼 Salary
-						</label>
-						<label for="radio-8">
-							<input type="radio" id="radio-8" name="radio" value="business"/>
-							📈 Business
-						</label>
-						<label for="radio-9">
-							<input type="radio" id="radio-9" name="radio" value="investment"/>
-							📊 Investment
-						</label>
-						<label for="radio-10">
-							<input type="radio" id="radio-10" name="radio" value="gift"/>
-							🎁 Gift
-						</label>
-						<label for="radio-11">
-							<input type="radio" id="radio-11" name="radio" value="other"/>
-							🏥 Other
-						</label>
+						for idx,item:= range incomeCategory {
+							<label for={ "radio-inc-"+strconv.Itoa(idx) } >
+								<input type="radio" id={ "radio-inc-"+strconv.Itoa(idx) } name="category" value={ item }/>
+								{ item }
+							</label>
+						}
 					</fieldset>
 				</div>
 				<label for="amount">How Much ?</label>
-				<!-- Include Cleave.js library -->
-				// <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
-				<!-- Input field for amount with Indonesian Rupiah formatting -->
-				<fieldset role="group">
-				<input  value="Rp" disabled style="width: 15%;"/>
-					<input type="number" id="amount" name="amount" required style="text-align: right;" inputmode="decimal" pattern="[0-9]*" />		
-					<input  value="K" disabled style="width: 15%;"/>
+				<fieldset role="group" x-data="{ trx_amount: '', trx_amount_k: '' }" x-init="$watch('trx_amount_k', value => trx_amount = value * 1000)">
+					<input
+						value="Rp"
+						value="Read-only"
+						aria-label="Read-only input"
+						readonly
+						style="width: 15%;"
+					/>
+					<input x-model="trx_amount_k" step="any" type="number" inputmode="decimal" id="amount_k" name="amount_k" required style="text-align: right;"/>
+					<input
+						value="K"
+						value="Read-only"
+						aria-label="Read-only input"
+						readonly
+						style="width: 15%;"
+					/>
+					<input  x-model="trx_amount" type="text" id="amount" name="amount" readonly />
+						
 				</fieldset>
-				<script>
-                    
-                </script>
-				<label for="expense-date">When ?</label>
-				<input type="datetime-local" id="expense-date" name="expense-date" required/>
-				<script>
-                    document.addEventListener('DOMContentLoaded', (event) => {
-                        const expenseDateInput = document.getElementById('expense-date');
-                        const now = new Date();
-                        const offset = now.getTimezoneOffset() * 60000;
-                        const localISOTime = new Date(now - offset).toISOString().slice(0, 16);
-                        expenseDateInput.value = localISOTime;
-                    });
-                </script>
-				<label for="trx-type">Submit !</label>
-				<button type="submit" id="submit-button" >Add Expense</button>
+
+				<div x-data="{ transaction_datetime: '', transaction_at: '' }" x-init="$watch('transaction_datetime', value => transaction_at = value + ':00+07:00')">
+					<label for="transaction_shadow_date">When ? (GMT+7)</label>
+					<input type="datetime-local" id="transaction_shadow_date"  required x-model="transaction_datetime"/>
+					<input hidden type="text" id="transaction_at" name="transaction_at" x-model="transaction_at" readonly/>
+				</div>
+
+				<button type="submit" id="submit_button">Add Expense</button>
 				<script>
                     document.addEventListener('DOMContentLoaded', (event) => {
                         const submitButton = document.getElementById('submit-button');
                         const expenseNameInput = document.getElementById('expense-name');
                         const expenseAmountInput = document.getElementById('expense-amount');
-                        const expenseDateInput = document.getElementById('expense-date');
+                        const expenseDateInput = document.getElementById('transaction_at');
 
                         const validateForm = () => {
                             const expenseName = expenseNameInput.value.trim();

@@ -3,6 +3,7 @@ package mwr
 import (
 	"bajetapp/model"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo-contrib/session"
@@ -24,22 +25,16 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func GetLoginInfo(c echo.Context) *model.GoogleUserInfo {
+func GetLoginInfo(c echo.Context) (*model.GoogleUserInfo, error) {
 	userInfo := c.Get("user_info")
 	if userInfo == nil {
-		return nil
-	}
-
-	userInfoBytes, err := json.Marshal(userInfo)
-	if err != nil {
-		return nil
+		return nil, fmt.Errorf("user info not found")
 	}
 
 	var user model.GoogleUserInfo
-	err = json.Unmarshal(userInfoBytes, &user)
-	if err != nil {
-		return nil
+	if err := json.Unmarshal([]byte(userInfo.(string)), &user); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal user info: %w", err)
 	}
 
-	return &user
+	return &user, nil
 }

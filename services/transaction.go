@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/civil"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -47,6 +48,7 @@ func (ts *TransactionService) GetTransactions(ctx context.Context, userID string
 }
 
 func (ts *TransactionService) CreateTransaction(ctx context.Context, transaction model.Transaction) error {
+	transaction.ID = primitive.NewObjectID()
 	transaction.CreatedAt = time.Now()
 	collection := ts.db.Collection("transactions")
 	_, err := collection.InsertOne(ctx, transaction)

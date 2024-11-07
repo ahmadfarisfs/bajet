@@ -114,11 +114,12 @@ func handleMain(c echo.Context) error {
 }
 
 func handleAddPage(c echo.Context) error {
-	if !utils.IsAuthenticated(c) {
-		c.Redirect(http.StatusTemporaryRedirect, "/")
-	}
+	cpmnt := pages.AddTransaction(
+		c.Get(middleware.DefaultCSRFConfig.ContextKey).(string),
+		[]string{"🍔 Food", "🚗 Transport", "🎉 Entertainment", "🛍️ Shopping", "🔧 Others"},
+		[]string{"💼 Salary", "📈 Business", "📊 Investment", "🎁 Gift", "🏥 Other"},
+	)
 
-	cpmnt := pages.AddTransaction(c.Get(middleware.DefaultCSRFConfig.ContextKey).(string))
 	Render(c, &cpmnt)
 	return nil
 }
