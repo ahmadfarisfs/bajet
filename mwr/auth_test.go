@@ -33,7 +33,13 @@ func TestUnmarshalGoogleUserInfo(t *testing.T) {
 		Picture:       "https://lh3.googleusercontent.com/a/ACg8ocI7m5ynsuBEcdpiyllo479nvaMtM2j70HfR2NFnMA9pujf91SnUgw=s96-c",
 	}
 
-	if userInfo != expected {
+	if userInfo.ID != expected.ID ||
+		userInfo.Email != expected.Email ||
+		userInfo.VerifiedEmail != expected.VerifiedEmail ||
+		userInfo.Name != expected.Name ||
+		userInfo.GivenName != expected.GivenName ||
+		userInfo.FamilyName != expected.FamilyName ||
+		userInfo.Picture != expected.Picture {
 		t.Errorf("unmarshaled user info does not match expected value. Got %+v, expected %+v", userInfo, expected)
 	}
 }
