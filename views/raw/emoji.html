@@ -1,0 +1,31 @@
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Get started with emoji-picker CDN - cdnhub.io</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/emoji-picker/1.3.0/css/emoji-picker.min.css" />
+</head>
+<body>
+    <button id="show-emoji-picker">Show Emoji Picker</button>
+    <div id="emoji-container"></div>
+
+    <script src="https://cdn.cdnhub.io/emoji-picker/1.3.0/js/emoji-picker.min.js"></script>
+    <script>
+        const emojiPickerButton = document.getElementById('show-emoji-picker');
+        const emojiContainer = document.getElementById('emoji-container');
+
+        emojiPickerButton.addEventListener('click', () => {
+            const picker = new EmojiPicker('emoji-container', {
+                onEmojiSelect: (event, emojiObject) => {
+                    const emoji = document.createElement('span');
+                    emoji.textContent = emojiObject.emoji;
+                    emojiContainer.appendChild(emoji);
+                }
+            });
+            picker.show();
+        });
+    </script>
+</body>
+</html>

@@ -8,3 +8,4 @@ use("bajet");
 // Create a new collection.
 db.createCollection("users");
 db.createCollection("transactions");
+db.createCollection("categories");

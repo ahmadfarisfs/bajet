@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+   <!-- Fluid viewport -->
+<link
+rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css"
+>
+    <!-- Include the emoji-picker-element library -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+      <style>
+        /* Style the emoji picker */
+        emoji-picker {
+            position: absolute;
+            z-index: 1000;
+           /* Initially hidden */
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+          <ul>
+            <li><hgroup>
+              <h1>💰 Bajet</h1>
+              <p>Never run out of money!</p>
+            </hgroup></li>
+          </ul>
+          <ul>
+           <li><button class="secondary">Hi Faris !</button></li>
+          </ul>
+        </nav>
+  </header>
+    <main>
+
+         <section class="add-category">
+            <form id="add-category-form">
+       
+                <fieldset role="group">
+                <!-- <label for="category-icon">Emoji</label> -->
+                <input placeholder="Emoji" type="text" id="category-icon" name="category-icon" required readonly style="width: 20%;"/>
+          
+               
+       
+                <!-- <label for="category-name">Name</label> -->
+                <input placeholder="Name" type="text" id="expense-name" name="expense-name" maxlength="20" required autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length);"/>
+                <button type="submit" id="submit-button">Add</button>
+            </fieldset>
+                <emoji-picker id="emoji-picker" emoji-version="15.0"></emoji-picker>
+        
+            </form>
+        </section>
+
+        <section class="categories">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: center;">Icon</th>
+                        <!-- <th>📂</th> -->
+                        <th style="text-align: center;">Name</th>
+                        <th style="text-align: center;">Used By</th>
+                        <th style="text-align: center;">Total Exp</th>
+                        <th style="text-align: center;">Total Inc</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: center;">🍽️</td>
+                        <td style="text-align: center;">Food</td>
+                        <td style="text-align: center;">600</td>
+                        <td style="text-align: center;">Rp 2.000</td>
+                        <td style="text-align: center;">Rp 2.000</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">⛽️</td>
+                        <td style="text-align: center;">Petrol</td>
+                        <td style="text-align: center;">40</td>
+                        <td style="text-align: center;">Rp 2.000</td>
+                        <td style="text-align: center;">Rp 2.000</td>
+                    </tr>
+                  
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <th scope="row" colspan="2" style="text-align: center;">Total</th>
+                      <td style="text-align: center;">640</td>
+                      <td style="text-align: center;">Rp 0</td>
+                      <td style="text-align: center;">Rp 0</td>
+                    </tr>
+                  </tfoot>
+            </table>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Bajet</p>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const categoryIconInput = document.getElementById('category-icon');
+            const emojiPicker = document.getElementById('emoji-picker');
+
+            // Show the emoji picker when the input field is focused
+            categoryIconInput.addEventListener('focus', function () {
+                const rect = categoryIconInput.getBoundingClientRect();
+                emojiPicker.style.top = `${rect.bottom + window.scrollY}px`;
+                emojiPicker.style.left = `${rect.left + window.scrollX}px`;
+                emojiPicker.style.display = 'block';
+            });
+
+            // Hide the emoji picker when clicking outside of it
+            document.addEventListener('click', function (event) {
+                if (!emojiPicker.contains(event.target) && event.target !== categoryIconInput) {
+                    emojiPicker.style.display = 'none';
+                }
+            });
+
+            // Insert the selected emoji into the input field
+            emojiPicker.addEventListener('emoji-click', function (event) {
+                categoryIconInput.value = event.detail.unicode;
+                emojiPicker.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
