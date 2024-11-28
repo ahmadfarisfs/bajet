@@ -23,7 +23,6 @@ func NewTransactionService(db *mongo.Database) *TransactionService {
 }
 
 func (ts *TransactionService) GetTransactions(ctx context.Context, userID string, dateStart civil.Date, dateEnd civil.Date) ([]model.Transaction, error) {
-	//get jakarta start of day
 	timeStart := time.Date(dateStart.Year, dateStart.Month, dateStart.Day, 0, 0, 0, 0, time.Local)
 	timeEnd := time.Date(dateEnd.Year, dateEnd.Month, dateEnd.Day, 23, 59, 59, 0, time.Local)
 	collection := ts.db.Collection("transactions")

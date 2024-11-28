@@ -13,6 +13,8 @@ require (
 	golang.org/x/oauth2 v0.23.0
 )
 
+require github.com/midtrans/midtrans-go v1.3.8 // indirect
+
 require (
 	cloud.google.com/go v0.116.0
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
