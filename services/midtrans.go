@@ -12,20 +12,26 @@ type MidtransReceiver struct {
 	client *coreapi.Client
 }
 
-func NewMidtransMoneyReceiver(serverKey string) *MidtransReceiver {
+func NewMidtransMoneyReceiver(serverKey string, isSandbox bool) *MidtransReceiver {
 	//Initiate client for Midtrans CoreAPI
 	var c = coreapi.Client{}
-	c.New(serverKey, midtrans.Sandbox)
+	if isSandbox {
+		c.New(serverKey, midtrans.Sandbox)
+	} else {
+		c.New(serverKey, midtrans.Production)
+	}
 	return &MidtransReceiver{
 		client: &c,
 	}
 }
 
+func (r *MidtransReceiver) HandleNotificationCallback()
+
 func (r *MidtransReceiver) CreateDynamicQRISInvoice(amount int) (*coreapi.ChargeResponse, error) {
 	req := &coreapi.ChargeReq{
 		PaymentType: coreapi.PaymentTypeQris,
 		TransactionDetails: midtrans.TransactionDetails{
-			OrderID:  "order-id-" + fmt.Sprint(time.Now().Unix()),
+			OrderID:  "odr-" + fmt.Sprint(time.Now().Unix()),
 			GrossAmt: int64(amount),
 		},
 		Qris: &coreapi.QrisDetails{
