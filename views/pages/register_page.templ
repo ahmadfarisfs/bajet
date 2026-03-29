@@ -1,32 +1,31 @@
-
 package pages
 
 import "bajetapp/views/component"
 
-templ LoginPage(csrfToken string, errorMessage string, language string) {
+templ RegisterPage(csrfToken string, errorMessage string, language string) {
 	@component.Base(language) {
 		<section class="mx-auto max-w-md">
 			<div class="rounded-3xl border border-white/[0.06] bg-slate-900/60 p-6 shadow-card backdrop-blur-sm sm:p-8">
 				<div class="mb-8 space-y-2">
 					<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">
 						if language == "id" {
-							Selamat datang kembali
+							Mulai sekarang
 						} else {
-							Welcome back
+							Get started
 						}
 					</p>
 					<h2 class="text-2xl font-bold tracking-tight text-white">
 						if language == "id" {
-							Masuk
+							Buat Akun
 						} else {
-							Login
+							Create Account
 						}
 					</h2>
 					<p class="text-sm leading-relaxed text-slate-500">
 						if language == "id" {
-							Masuk untuk melanjutkan ke workspace pengelolaan anggaran Anda.
+							Buat akun dalam hitungan detik dan mulai atur anggaran Anda.
 						} else {
-							Sign in to continue to your budgeting workspace.
+							Set up your account in seconds and start tracking your budget.
 						}
 					</p>
 				</div>
@@ -36,7 +35,7 @@ templ LoginPage(csrfToken string, errorMessage string, language string) {
 						{ errorMessage }
 					</div>
 				}
-				<form method="POST" action="/login" class="flex flex-col gap-5" x-data="{ loading: false }" @submit="loading = true">
+				<form method="POST" action="/register" class="flex flex-col gap-5" x-data="{ loading: false }" @submit="loading = true">
 					<input type="hidden" name="_csrf" value={ csrfToken }/>
 					<input type="hidden" name="language" value={ language }/>
 					<div class="flex flex-col gap-1.5">
@@ -57,49 +56,56 @@ templ LoginPage(csrfToken string, errorMessage string, language string) {
 								Password
 							}
 						</label>
-						<input id="password" name="password" type="password" autocomplete="current-password" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+						<input id="password" name="password" type="password" autocomplete="new-password" minlength="6" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+						<p class="text-xs text-slate-600">
+							if language == "id" {
+								Minimal 6 karakter
+							} else {
+								Minimum 6 characters
+							}
+						</p>
 					</div>
 					<button type="submit" :disabled="loading" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 text-sm font-semibold text-white shadow-soft transition duration-200 ease-bounce-sm hover:-translate-y-0.5 hover:bg-brand-400 active:scale-95 disabled:pointer-events-none disabled:opacity-60">
 						<svg x-show="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle></svg>
 						<span x-show="!loading">
 							if language == "id" {
-								Masuk
+								Buat Akun
 							} else {
-								Login
+								Create Account
 							}
 						</span>
 						<span x-show="loading">
 							if language == "id" {
-								Memproses…
+								Membuat…
 							} else {
-								Signing in…
+								Creating…
 							}
 						</span>
 					</button>
 				</form>
 				<p class="mt-6 text-center text-sm text-slate-500">
 					if language == "id" {
-						Butuh akun?
+						Sudah punya akun?
 					} else {
-						Need an account?
+						Already have an account?
 					}
 					if language == "id" {
-						<a href="/register?lang=id" class="font-semibold text-brand-400 transition hover:text-brand-300 focus-visible:underline">Daftar</a>
+						<a href="/login?lang=id" class="font-semibold text-brand-400 transition hover:text-brand-300 focus-visible:underline">Masuk</a>
 					} else {
-						<a href="/register?lang=en" class="font-semibold text-brand-400 transition hover:text-brand-300 focus-visible:underline">Register</a>
+						<a href="/login?lang=en" class="font-semibold text-brand-400 transition hover:text-brand-300 focus-visible:underline">Login</a>
 					}
 				</p>
 				<p class="mt-3 text-center text-xs text-slate-600">
 					if language == "id" {
 						Bahasa:
-						<a href="/login?lang=en" class="ml-1 text-slate-400 hover:text-white">English</a>
+						<a href="/register?lang=en" class="ml-1 text-slate-400 hover:text-white">English</a>
 						<span class="mx-1">|</span>
 						<span class="text-white">Indonesia</span>
 					} else {
 						Language:
 						<span class="ml-1 text-white">English</span>
 						<span class="mx-1">|</span>
-						<a href="/login?lang=id" class="text-slate-400 hover:text-white">Indonesia</a>
+						<a href="/register?lang=id" class="text-slate-400 hover:text-white">Indonesia</a>
 					}
 				</p>
 			</div>

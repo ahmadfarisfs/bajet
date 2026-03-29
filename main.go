@@ -1,39 +1,27 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"time"
 
 	"bajetapp/config"
-	"bajetapp/mwr"
+	"bajetapp/db"
 	"bajetapp/routes"
 	"bajetapp/services"
-	"bajetapp/utils"
-	"bajetapp/views/pages"
 
-	"bajetapp/db"
-
-	"cloud.google.com/go/civil"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 var (
-	authService *services.AuthService
-	trxService  *services.TransactionService
+	cycleService *services.CycleService
+	authService  *services.AuthLocalService
 )
-
-func init() {
-	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
-	}
-}
 
 type GoPlaygorundValidator struct {
 	validator *validator.Validate
@@ -50,13 +38,22 @@ func (cv *GoPlaygorundValidator) Validate(i interface{}) error {
 func main() {
 	config, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("error loading config: %w", err)
+		log.Fatalf("error loading config: %v", err)
 	}
 
-	// Initialize Database
-	_, mongo, err := db.ConnectMongoDB(config.MongoURI, config.MongoDatabase)
+	// Initialize SQLite database.
+	database, err := db.ConnectSQLite(config.SQLitePath)
 	if err != nil {
-		log.Fatal("error connecting to MongoDB: %w", err)
+		log.Fatalf("error connecting to SQLite: %v", err)
+	}
+	defer func(database *sql.DB) {
+		if err := database.Close(); err != nil {
+			log.Printf("error closing sqlite database: %v", err)
+		}
+	}(database)
+
+	if err := db.InitSQLiteSchema(database); err != nil {
+		log.Fatalf("error initializing SQLite schema: %v", err)
 	}
 
 	e := echo.New()
@@ -79,14 +76,6 @@ func main() {
 
 	e.Debug = true
 	e.Validator = &GoPlaygorundValidator{validator: validator.New()}
-	// e.HTTPErrorHandler = func(err error, c echo.Context) {
-	// 	code := http.StatusInternalServerError
-	// 	if he, ok := err.(*echo.HTTPError); ok {
-	// 		code = he.Code
-	// 	}
-	// 	c.Logger().Error(err)
-	// 	// c.HTML(code, "error", nil)
-	// }
 
 	staticRoot := e.Group("/static")
 	staticRoot.Use(middleware.StaticWithConfig(middleware.StaticConfig{
@@ -94,57 +83,9 @@ func main() {
 		Browse: false,
 	}))
 
-	// Routes
-	e.GET("/", handleLogin)
-	e.GET("/main", handleMain, mwr.AuthMiddleware)
-	e.GET("/add", handleAddPage, mwr.AuthMiddleware)
-
-	authService = services.NewAuthService(mongo, config.GoogleClientID, config.GoogleClientSecret, config.RedirectURL)
-	trxService = services.NewTransactionService(mongo)
-
-	routes.NewAuthRoutes(authService, e)
-	routes.NewTransactionRoutes(trxService, e)
+	cycleService = services.NewCycleService(database, config.DefaultBudget, config.CycleStartDay)
+	authService = services.NewAuthLocalService(database)
+	routes.NewCycleRoutes(cycleService, authService, e)
 
 	e.Logger.Fatal(e.Start(":8080"))
-}
-
-func handleMain(c echo.Context) error {
-	if !utils.IsAuthenticated(c) {
-		c.Redirect(http.StatusTemporaryRedirect, "/")
-		return nil
-	}
-
-	userInfo, err := mwr.GetLoginInfo(c)
-	if err != nil {
-		return err
-	}
-
-	trxs, err := trxService.GetTransactions(c.Request().Context(), userInfo.ID, civil.DateOf(time.Now()), civil.DateOf(time.Now()))
-	if err != nil {
-		return err
-	}
-	cpmnt := pages.MainPage(civil.DateOf(time.Now()), trxs)
-	utils.Render(c, &cpmnt)
-	return nil
-}
-
-func handleAddPage(c echo.Context) error {
-	cpmnt := pages.AddTransaction(
-		c.Get(middleware.DefaultCSRFConfig.ContextKey).(string),
-		[]string{"🍔 Food", "🚗 Transport", "🎉 Entertainment", "🛍️ Shopping", "🔧 Others"},
-		[]string{"💼 Salary", "📈 Business", "📊 Investment", "🎁 Gift", "🏥 Other"},
-	)
-	utils.Render(c, &cpmnt)
-	return nil
-}
-
-// Login page
-func handleLogin(c echo.Context) error {
-	if utils.IsAuthenticated(c) {
-		c.Redirect(http.StatusTemporaryRedirect, "/main")
-	}
-
-	cpmnt := pages.Login()
-	utils.Render(c, &cpmnt)
-	return nil
 }

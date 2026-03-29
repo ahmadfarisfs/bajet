@@ -1,0 +1,162 @@
+package pages
+
+import (
+	"bajetapp/model"
+	"bajetapp/views/component"
+	"fmt"
+)
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+templ CycleHistoryPage(dashboard model.Dashboard, csrfToken, viewMode string, page, pageSize, totalItems, totalPages int) {
+	@component.Base(dashboard.Language) {
+		<section class="mx-auto max-w-5xl space-y-6">
+			<div class="rounded-3xl border border-white/[0.06] bg-slate-900/60 p-6 shadow-card backdrop-blur-sm sm:p-8">
+				<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+					<div class="space-y-2">
+						<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">{ tr(dashboard.Language, "History", "Riwayat") }</p>
+						<h2 class="text-2xl font-bold tracking-tight text-white">{ tr(dashboard.Language, "Cycle History", "Riwayat Siklus") }</h2>
+						<p class="max-w-lg text-sm leading-relaxed text-slate-500">{ tr(dashboard.Language, "Review previous cycles, totals, and completion status.", "Tinjau siklus sebelumnya, totalnya, dan status penyelesaiannya.") }</p>
+					</div>
+					<div class="flex items-center gap-2">
+						<a href="/app" class="group inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 text-sm font-medium text-slate-300 transition hover:border-brand-400/30 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+							<svg class="h-4 w-4 text-slate-500 transition group-hover:text-brand-400" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+							{ tr(dashboard.Language, "Dashboard", "Dasbor") }
+						</a>
+						if totalItems > 0 {
+							<form method="POST" action="/cycle-history/clear" onsubmit="return confirm('Clear all completed cycle history?');">
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<button type="submit" class="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/[0.08] px-4 text-sm font-medium text-rose-300 transition hover:bg-rose-500/[0.14] focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+									<svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 4.5h9M6.5 4.5V3.2c0-.4.3-.7.7-.7h1.6c.4 0 .7.3.7.7v1.3M5 6.5v5.2M8 6.5v5.2M11 6.5v5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="4.5" width="8" height="9" rx="1.2" stroke="currentColor" stroke-width="1.2"/></svg>
+									{ tr(dashboard.Language, "Clear History", "Hapus Riwayat") }
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+			</div>
+
+			<div class="rounded-2xl border border-white/[0.06] bg-slate-900/40 p-3">
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<div class="inline-flex rounded-xl border border-white/[0.08] bg-white/[0.02] p-1">
+						if viewMode == "card" {
+							<a href={ templ.URL(fmt.Sprintf("/cycle-history?view=card&page=%d", page)) } class="inline-flex h-8 items-center rounded-lg bg-white/[0.08] px-3 text-xs font-semibold text-white transition">{ tr(dashboard.Language, "Card", "Kartu") }</a>
+						} else {
+							<a href={ templ.URL(fmt.Sprintf("/cycle-history?view=card&page=%d", page)) } class="inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold text-slate-400 transition hover:text-white">{ tr(dashboard.Language, "Card", "Kartu") }</a>
+						}
+						if viewMode == "table" {
+							<a href={ templ.URL(fmt.Sprintf("/cycle-history?view=table&page=%d", page)) } class="inline-flex h-8 items-center rounded-lg bg-white/[0.08] px-3 text-xs font-semibold text-white transition">{ tr(dashboard.Language, "Table", "Tabel") }</a>
+						} else {
+							<a href={ templ.URL(fmt.Sprintf("/cycle-history?view=table&page=%d", page)) } class="inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold text-slate-400 transition hover:text-white">{ tr(dashboard.Language, "Table", "Tabel") }</a>
+						}
+					</div>
+					if totalItems > 0 {
+						<p class="text-xs text-slate-500">
+							{ tr(dashboard.Language, "Showing", "Menampilkan") } { fmt.Sprintf("%d", (page-1)*pageSize+1) }-{ fmt.Sprintf("%d", minInt(page*pageSize, totalItems)) } { tr(dashboard.Language, "of", "dari") } { fmt.Sprintf("%d", totalItems) }
+						</p>
+					}
+				</div>
+			</div>
+
+			if totalItems == 0 {
+				<div class="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/[0.08] bg-slate-900/40 px-8 py-16 text-center">
+					<div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04] text-2xl">📋</div>
+					<p class="text-sm font-medium text-slate-400">{ tr(dashboard.Language, "No history yet", "Belum ada riwayat") }</p>
+					<p class="mt-1 max-w-xs text-xs text-slate-600">{ tr(dashboard.Language, "Completed cycles will appear here.", "Siklus yang sudah selesai akan muncul di sini.") }</p>
+				</div>
+			} else {
+				if viewMode == "table" {
+					<div class="overflow-hidden rounded-2xl border border-white/[0.06] bg-slate-900/50">
+						<table class="w-full text-left text-sm">
+							<thead class="border-b border-white/[0.06] bg-white/[0.02] text-xs uppercase tracking-wider text-slate-500">
+								<tr>
+									<th class="px-4 py-3">{ tr(dashboard.Language, "Cycle", "Siklus") }</th>
+									<th class="px-4 py-3">{ tr(dashboard.Language, "Status", "Status") }</th>
+									<th class="px-4 py-3">{ tr(dashboard.Language, "Budget", "Anggaran") }</th>
+									<th class="px-4 py-3">{ tr(dashboard.Language, "Completed", "Selesai") }</th>
+									<th class="px-4 py-3">{ tr(dashboard.Language, "Savings", "Sisa") }</th>
+									<th class="px-4 py-3">{ tr(dashboard.Language, "Deficit", "Defisit") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, item := range dashboard.History {
+									<tr class="border-b border-white/[0.04] last:border-b-0">
+										<td class="px-4 py-3 text-slate-200">{ item.StartDate.Format("02 Jan 2006") } – { item.EndDate.Format("02 Jan 2006") }</td>
+										<td class="px-4 py-3">
+											if item.IsCompleted {
+												<span class="inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">{ tr(dashboard.Language, "Done", "Selesai") }</span>
+											} else {
+												<span class="inline-flex h-5 items-center rounded-full bg-amber-500/10 px-2 text-[10px] font-semibold uppercase tracking-wider text-amber-400">{ tr(dashboard.Language, "Active", "Berjalan") }</span>
+											}
+										</td>
+										<td class="px-4 py-3 font-semibold tabular-nums text-white">{ formatMoney(item.TotalBudget, dashboard.CurrencyCode) }</td>
+										<td class="px-4 py-3 tabular-nums text-slate-300">{ fmt.Sprintf("%d/%d", item.CompletedPeriods, item.TotalPeriods) }</td>
+										<td class="px-4 py-3 font-semibold tabular-nums text-emerald-400">{ formatMoney(item.TotalSavings, dashboard.CurrencyCode) }</td>
+										<td class="px-4 py-3 font-semibold tabular-nums text-rose-400">{ formatMoney(item.TotalDefisit, dashboard.CurrencyCode) }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				} else {
+					<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+						for _, item := range dashboard.History {
+							<article class="rounded-3xl border border-white/[0.06] bg-slate-900/60 p-5 shadow-card backdrop-blur-sm transition duration-200 hover:border-white/[0.12]">
+								<header class="mb-4 space-y-1.5">
+									<div class="flex items-center justify-between">
+										<span class="text-[10px] font-semibold uppercase tracking-wider text-brand-400">{ fmt.Sprintf("%d %s", item.PeriodCount, tr(dashboard.Language, "periods", "periode")) }</span>
+										if item.IsCompleted {
+											<span class="inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">{ tr(dashboard.Language, "Done", "Selesai") }</span>
+										} else {
+											<span class="inline-flex h-5 items-center rounded-full bg-amber-500/10 px-2 text-[10px] font-semibold uppercase tracking-wider text-amber-400">{ tr(dashboard.Language, "Active", "Berjalan") }</span>
+										}
+									</div>
+									<h3 class="text-sm font-bold tracking-tight text-white">{ item.StartDate.Format("02 Jan 2006") } – { item.EndDate.Format("02 Jan 2006") }</h3>
+								</header>
+								<div class="space-y-2 border-t border-white/[0.04] pt-3">
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-slate-500">{ tr(dashboard.Language, "Budget", "Anggaran") }</span>
+										<span class="font-semibold tabular-nums text-white">{ formatMoney(item.TotalBudget, dashboard.CurrencyCode) }</span>
+									</div>
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-slate-500">{ tr(dashboard.Language, "Completed", "Selesai") }</span>
+										<span class="font-medium tabular-nums text-slate-300">{ fmt.Sprintf("%d/%d", item.CompletedPeriods, item.TotalPeriods) }</span>
+									</div>
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-slate-500">{ tr(dashboard.Language, "Savings", "Sisa") }</span>
+										<span class="font-semibold tabular-nums text-emerald-400">{ formatMoney(item.TotalSavings, dashboard.CurrencyCode) }</span>
+									</div>
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-slate-500">{ tr(dashboard.Language, "Deficit", "Defisit") }</span>
+										<span class="font-semibold tabular-nums text-rose-400">{ formatMoney(item.TotalDefisit, dashboard.CurrencyCode) }</span>
+									</div>
+								</div>
+							</article>
+						}
+					</div>
+				}
+
+				if totalPages > 1 {
+					<div class="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.06] bg-slate-900/40 px-4 py-3">
+						if page > 1 {
+							<a href={ templ.URL(fmt.Sprintf("/cycle-history?view=%s&page=%d", viewMode, page-1)) } class="inline-flex h-9 items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm font-medium text-slate-300 transition hover:text-white">{ tr(dashboard.Language, "Previous", "Sebelumnya") }</a>
+						} else {
+							<span class="inline-flex h-9 items-center rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 text-sm font-medium text-slate-600">{ tr(dashboard.Language, "Previous", "Sebelumnya") }</span>
+						}
+						<p class="text-xs text-slate-500">{ tr(dashboard.Language, "Page", "Halaman") } { fmt.Sprintf("%d", page) } / { fmt.Sprintf("%d", totalPages) }</p>
+						if page < totalPages {
+							<a href={ templ.URL(fmt.Sprintf("/cycle-history?view=%s&page=%d", viewMode, page+1)) } class="inline-flex h-9 items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm font-medium text-slate-300 transition hover:text-white">{ tr(dashboard.Language, "Next", "Berikutnya") }</a>
+						} else {
+							<span class="inline-flex h-9 items-center rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 text-sm font-medium text-slate-600">{ tr(dashboard.Language, "Next", "Berikutnya") }</span>
+						}
+					</div>
+				}
+			}
+		</section>
+	}
+}

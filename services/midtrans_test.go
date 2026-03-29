@@ -8,7 +8,7 @@ import (
 func TestMidtransQRIS(t *testing.T) {
 	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
 	if serverKey == "" {
-		t.Fatal("MIDTRANS_SERVER_KEY environment variable is not set")
+		t.Skip("MIDTRANS_SERVER_KEY environment variable is not set")
 	}
 	// Create a new MidtransReceiver instance
 	receiver := NewMidtransMoneyReceiver(serverKey, true)

@@ -1,0 +1,113 @@
+package pages
+
+import (
+	"bajetapp/model"
+	"bajetapp/views/component"
+)
+
+templ OnboardingCyclePage(draft model.OnboardingDraft, csrfToken string) {
+	@component.Base(draft.Language) {
+		<section class="mx-auto max-w-lg">
+			<!-- Step indicator -->
+			<div class="mb-6 flex items-center justify-center gap-2" aria-label="Step 1 of 2">
+				<div class="h-1.5 w-8 rounded-full bg-brand-500"></div>
+				<div class="h-1.5 w-8 rounded-full bg-white/[0.08]"></div>
+			</div>
+			<div class="rounded-3xl border border-white/[0.06] bg-slate-900/60 p-6 shadow-card backdrop-blur-sm sm:p-8" x-data={ "{ startDate: '" + draft.StartDate + "', previousEnd: '" + draft.PreviousCycleEndDate + "', gapDays: 0, recalcGap() { if (!this.previousEnd || !this.startDate) { this.gapDays = 0; return; } const prevEnd = new Date(this.previousEnd + 'T00:00:00'); const expectedStart = new Date(prevEnd.getTime() + 86400000); const pickedStart = new Date(this.startDate + 'T00:00:00'); this.gapDays = Math.floor((pickedStart - expectedStart) / 86400000); } }" } x-init="recalcGap()">
+				<div class="mb-8 space-y-2">
+					<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">
+						if draft.Language == "id" {
+							Langkah 1
+						} else {
+							Step 1
+						}
+					</p>
+					<h2 class="text-2xl font-bold tracking-tight text-white">{ tr(draft.Language, "Set Your Cycle", "Atur Siklus Anda") }</h2>
+					<p class="text-sm leading-relaxed text-slate-500">{ tr(draft.Language, "Choose the date window for this budgeting cycle. Next, you'll set a budget and periods.", "Pilih rentang tanggal untuk siklus anggaran ini. Selanjutnya, Anda akan mengatur anggaran dan periode.") }</p>
+				</div>
+				if draft.PreviousCycleEndDate != "" {
+					<div x-show="gapDays > 0" x-cloak class="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-300">
+						<svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.8v3.5M8 10.7v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+						if draft.Language == "id" {
+							<p>{ "Ada jeda " }<span class="font-semibold" x-text="gapDays"></span>{ " hari dari siklus sebelumnya. Pertimbangkan mulai di hari berikutnya agar berkelanjutan." }</p>
+						} else {
+							<p>{ "There is a gap of " }<span class="font-semibold" x-text="gapDays"></span>{ " day(s) from your previous cycle. Consider starting on the next day for continuity." }</p>
+						}
+					</div>
+				}
+				if draft.Error != "" {
+					<div role="alert" class="mb-6 flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-4 py-3 text-sm text-rose-300">
+						<svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+						{ draft.Error }
+					</div>
+				}
+				<form method="POST" action="/onboarding/cycle" class="flex flex-col gap-5" x-data="{ loading: false }" @submit="loading = true">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<div class="grid gap-5 sm:grid-cols-2">
+						<div class="flex flex-col gap-1.5">
+							<label for="start_date" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "Start Date", "Tanggal Mulai") }</label>
+							<input id="start_date" name="start_date" type="date" value={ draft.StartDate } x-model="startDate" @input="recalcGap()" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+						</div>
+						<div class="flex flex-col gap-1.5">
+							<label for="end_date" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "End Date", "Tanggal Selesai") }</label>
+							<input id="end_date" name="end_date" type="date" value={ draft.EndDate } required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+						</div>
+					</div>
+					<div class="grid gap-5 sm:grid-cols-2">
+						<div class="flex flex-col gap-1.5">
+							<label for="currency_code" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "Currency", "Mata Uang") }</label>
+							<select id="currency_code" name="currency_code" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30">
+								if draft.CurrencyCode == "USD" {
+									<option value="USD" selected>USD ($)</option>
+								} else {
+									<option value="USD">USD ($)</option>
+								}
+								if draft.CurrencyCode == "IDR" {
+									<option value="IDR" selected>IDR (Rp)</option>
+								} else {
+									<option value="IDR">IDR (Rp)</option>
+								}
+								if draft.CurrencyCode == "EUR" {
+									<option value="EUR" selected>EUR (€)</option>
+								} else {
+									<option value="EUR">EUR (€)</option>
+								}
+								if draft.CurrencyCode == "SGD" {
+									<option value="SGD" selected>SGD (S$)</option>
+								} else {
+									<option value="SGD">SGD (S$)</option>
+								}
+								if draft.CurrencyCode == "GBP" {
+									<option value="GBP" selected>GBP (£)</option>
+								} else {
+									<option value="GBP">GBP (£)</option>
+								}
+								if draft.CurrencyCode == "JPY" {
+									<option value="JPY" selected>JPY (¥)</option>
+								} else {
+									<option value="JPY">JPY (¥)</option>
+								}
+							</select>
+						</div>
+						<div class="flex flex-col gap-1.5">
+							<label for="language" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "Language", "Bahasa") }</label>
+							<select id="language" name="language" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30">
+								if draft.Language == "id" {
+									<option value="en">English</option>
+									<option value="id" selected>Bahasa Indonesia</option>
+								} else {
+									<option value="en" selected>English</option>
+									<option value="id">Bahasa Indonesia</option>
+								}
+							</select>
+						</div>
+					</div>
+					<button type="submit" :disabled="loading" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 text-sm font-semibold text-white shadow-soft transition duration-200 ease-bounce-sm hover:-translate-y-0.5 hover:bg-brand-400 active:scale-95 disabled:pointer-events-none disabled:opacity-60">
+						<span x-show="!loading">{ tr(draft.Language, "Continue", "Lanjut") }</span>
+						<svg x-show="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle></svg>
+					</button>
+				</form>
+			</div>
+		</section>
+	}
+}

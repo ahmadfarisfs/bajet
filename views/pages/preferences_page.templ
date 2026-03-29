@@ -1,0 +1,131 @@
+package pages
+
+import "bajetapp/views/component"
+
+templ PreferencesPage(currencyCode, language, csrfToken, errMsg string) {
+	@component.Base(language) {
+		<section class="mx-auto max-w-md">
+			<div class="rounded-3xl border border-white/[0.06] bg-slate-900/60 p-6 shadow-card backdrop-blur-sm sm:p-8">
+				<div class="mb-8 space-y-2">
+					<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">
+						if language == "id" {
+							Pengaturan
+						} else {
+							Settings
+						}
+					</p>
+					<h2 class="text-2xl font-bold tracking-tight text-white">
+						if language == "id" {
+							Preferensi
+						} else {
+							Preferences
+						}
+					</h2>
+					<p class="text-sm leading-relaxed text-slate-500">
+						if language == "id" {
+							Atur mata uang dan bahasa yang dipakai di seluruh aplikasi.
+						} else {
+							Choose the currency and language used across your app.
+						}
+					</p>
+				</div>
+
+				if errMsg != "" {
+					<div role="alert" class="mb-6 flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-4 py-3 text-sm text-rose-300">
+						<svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+						{ errMsg }
+					</div>
+				}
+
+				<form method="POST" action="/preferences" class="flex flex-col gap-5" x-data="{ loading: false }" @submit="loading = true">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+
+					<div class="flex flex-col gap-1.5">
+						<label for="currency_code" class="text-xs font-semibold uppercase tracking-widest text-slate-400">
+							if language == "id" {
+								Mata Uang
+							} else {
+								Currency
+							}
+						</label>
+						<select id="currency_code" name="currency_code" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30">
+							if currencyCode == "USD" {
+								<option value="USD" selected>USD ($)</option>
+							} else {
+								<option value="USD">USD ($)</option>
+							}
+							if currencyCode == "IDR" {
+								<option value="IDR" selected>IDR (Rp)</option>
+							} else {
+								<option value="IDR">IDR (Rp)</option>
+							}
+							if currencyCode == "EUR" {
+								<option value="EUR" selected>EUR (€)</option>
+							} else {
+								<option value="EUR">EUR (€)</option>
+							}
+							if currencyCode == "SGD" {
+								<option value="SGD" selected>SGD (S$)</option>
+							} else {
+								<option value="SGD">SGD (S$)</option>
+							}
+							if currencyCode == "GBP" {
+								<option value="GBP" selected>GBP (£)</option>
+							} else {
+								<option value="GBP">GBP (£)</option>
+							}
+							if currencyCode == "JPY" {
+								<option value="JPY" selected>JPY (¥)</option>
+							} else {
+								<option value="JPY">JPY (¥)</option>
+							}
+						</select>
+					</div>
+
+					<div class="flex flex-col gap-1.5">
+						<label for="language" class="text-xs font-semibold uppercase tracking-widest text-slate-400">
+							if language == "id" {
+								Bahasa
+							} else {
+								Language
+							}
+						</label>
+						<select id="language" name="language" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30">
+							if language == "id" {
+								<option value="en">English</option>
+								<option value="id" selected>Bahasa Indonesia</option>
+							} else {
+								<option value="en" selected>English</option>
+								<option value="id">Bahasa Indonesia</option>
+							}
+						</select>
+					</div>
+
+					<button type="submit" :disabled="loading" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 text-sm font-semibold text-white shadow-soft transition duration-200 ease-bounce-sm hover:-translate-y-0.5 hover:bg-brand-400 active:scale-95 disabled:pointer-events-none disabled:opacity-60">
+						<svg x-show="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle></svg>
+						if language == "id" {
+							<span x-show="!loading">Simpan Preferensi</span>
+						} else {
+							<span x-show="!loading">Save Preferences</span>
+						}
+						<span x-show="loading">
+							if language == "id" {
+								Menyimpan…
+							} else {
+								Saving…
+							}
+						</span>
+					</button>
+				</form>
+
+				<p class="mt-6 text-center text-sm text-slate-500">
+					if language == "id" {
+						<a href="/app" class="font-semibold text-brand-400 transition hover:text-brand-300 focus-visible:underline">← Kembali ke Beranda</a>
+					} else {
+						<a href="/app" class="font-semibold text-brand-400 transition hover:text-brand-300 focus-visible:underline">← Back to Dashboard</a>
+					}
+				</p>
+			</div>
+		</section>
+	}
+}

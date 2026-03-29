@@ -10,12 +10,10 @@ import (
 )
 
 type Config struct {
-	SessionSecret        string `mapstructure:"SESSION_SECRET" validate:"required"`
-	GoogleClientID       string `mapstructure:"GOOGLE_CLIENT_ID" validate:"required"`
-	GoogleClientSecret   string `mapstructure:"GOOGLE_CLIENT_SECRET" validate:"required"`
-	RedirectURL          string `mapstructure:"GOOGLE_LOGIN_REDIRECT_URL" validate:"required,url"`
-	MongoURI             string `mapstructure:"MONGO_URI" validate:"required,url"`
-	MongoDatabase        string `mapstructure:"MONGO_DATABASE" validate:"required"`
+	SessionSecret        string `mapstructure:"SESSION_SECRET"`
+	SQLitePath           string `mapstructure:"SQLITE_PATH"`
+	DefaultBudget        int    `mapstructure:"DEFAULT_BUDGET" validate:"gt=0"`
+	CycleStartDay        int    `mapstructure:"CYCLE_START_DAY" validate:"gte=1,lte=28"`
 	ContextTimeoutSecond int    `mapstructure:"CONTEXT_TIMEOUT_SECOND" validate:"gt=0"`
 }
 
@@ -30,6 +28,22 @@ func LoadConfig() (*Config, error) {
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, err
+	}
+
+	if config.SQLitePath == "" {
+		config.SQLitePath = "bajet.db"
+	}
+	if config.SessionSecret == "" {
+		config.SessionSecret = "bajet-dev-session-secret"
+	}
+	if config.DefaultBudget == 0 {
+		config.DefaultBudget = 2_000_000
+	}
+	if config.CycleStartDay == 0 {
+		config.CycleStartDay = 25
+	}
+	if config.ContextTimeoutSecond == 0 {
+		config.ContextTimeoutSecond = 10
 	}
 
 	// Validate the config using the validator package

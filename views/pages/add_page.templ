@@ -5,62 +5,70 @@ import (
 	"strconv"
 )
 
-templ AddTransaction(csrfToken string, expenseCategory []string, incomeCategory []string) {
-	@component.Base() {
-		<section class="add-expense">
-			<form id="add-expense" method="POST" action="/trx" x-data="{ trx_amount: '', trx_amount_k: '', category: '' }" x-init="$watch('trx_amount_k', value => trx_amount = category.startsWith('radio-exp-') ? value * -1000 : value * 1000)">
-				<input type="hidden" name="_csrf" value={ csrfToken }/>
-				<label for="description">What ?</label>
-				<input style="text-align: center;" type="text" id="description" name="description" required autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length);"/>
-				<div style="display: flex; justify-content: space-between;">
-					<fieldset id="expense-category" style="flex: 1; margin-right: 10px;">
-						<legend>Expense:</legend>
-						for idx,item:= range expenseCategory {
-							<label for={ "radio-exp-"+strconv.Itoa(idx) } >
-								<input type="radio" id={ "radio-exp-"+strconv.Itoa(idx) } name="category" value={ item } x-model="category"/>
-								{ item }
-							</label>
-						}
-					</fieldset>
-					<fieldset id="income-category" style="flex: 1; margin-left: 10px;">
-						<legend>Income:</legend>
-						for idx,item:= range incomeCategory {
-							<label for={ "radio-inc-"+strconv.Itoa(idx) } >
-								<input type="radio" id={ "radio-inc-"+strconv.Itoa(idx) } name="category" value={ item } x-model="category"/>
-								{ item }
-							</label>
-						}
-					</fieldset>
+templ AddTransaction(csrfToken string, currencyCode string, language string, expenseCategory []string, incomeCategory []string) {
+	@component.Base(language) {
+		<section class="mx-auto max-w-lg">
+			<div class="rounded-3xl border border-white/[0.06] bg-slate-900/60 p-6 shadow-card backdrop-blur-sm sm:p-8">
+				<div class="mb-8 space-y-2">
+					<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">{ tr(language, "New Entry", "Entri Baru") }</p>
+					<h2 class="text-2xl font-bold tracking-tight text-white">{ tr(language, "Add Transaction", "Tambah Transaksi") }</h2>
 				</div>
-				<label for="amount">How Much ?</label>
-				<fieldset role="group">
-					<input
-						value="Rp"
-						value="Read-only"
-						aria-label="Read-only input"
-						readonly
-						style="width: 15%;"
-					/>
-					<input x-model="trx_amount_k" step="any" type="number" inputmode="decimal" id="amount_k" name="amount_k" required style="text-align: right;"/>
-					<input
-						value="K"
-						value="Read-only"
-						aria-label="Read-only input"
-						readonly
-						style="width: 15%;"
-					/>
-					<input  aria-hidden="true" x-model="trx_amount" type="text" id="amount" name="amount" readonly />
-						
-				</fieldset>
+				<form id="add-expense" method="POST" action="/trx" class="flex flex-col gap-5" x-data={ "{ trx_amount: '', trx_amount_k: '', amount_k_display: '', locale: '" + currencyLocale(currencyCode) + "', category: '', loading: false, parseAmountK(value) { const raw = String(value || '').replace(/[^0-9]/g, ''); return raw === '' ? 0 : parseInt(raw, 10); }, onAmountKInput(event) { this.trx_amount_k = this.parseAmountK(event.target.value); this.amount_k_display = this.trx_amount_k.toLocaleString(this.locale); this.trx_amount = this.category.startsWith('radio-exp-') ? this.trx_amount_k * -1000 : this.trx_amount_k * 1000; }, recalcAmount() { this.trx_amount = this.category.startsWith('radio-exp-') ? this.trx_amount_k * -1000 : this.trx_amount_k * 1000; } }" } x-init="recalcAmount()" @submit="loading = true">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
 
-				<div x-data="{ transaction_datetime: '', transaction_at: '' }" x-init="$watch('transaction_datetime', value => transaction_at = value + ':00+07:00')">
-					<label for="transaction_shadow_date">When ? (GMT+7)</label>
-					<input type="datetime-local" id="transaction_shadow_date"  required x-model="transaction_datetime"/>
-					<input hidden type="text" id="transaction_at" name="transaction_at" x-model="transaction_at" readonly/>
-				</div>
+					<div class="flex flex-col gap-1.5">
+						<label for="description" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(language, "Description", "Deskripsi") }</label>
+						<input type="text" id="description" name="description" required autofocus placeholder={ tr(language, "Coffee, groceries, salary…", "Kopi, belanja, gaji…") } class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-center text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+					</div>
 
-				<button type="submit" id="submit_button">Add Expense</button>
-			</form>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<fieldset>
+							<legend class="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(language, "Expense", "Pengeluaran") }</legend>
+							<div class="flex flex-wrap gap-2" role="radiogroup">
+								for idx, item := range expenseCategory {
+									<label class="cursor-pointer">
+										<input type="radio" id={ "radio-exp-" + strconv.Itoa(idx) } name="category" value={ item } x-model="category" class="peer sr-only"/>
+										<span class="inline-flex h-9 items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-slate-400 transition peer-checked:border-rose-400/40 peer-checked:bg-rose-500/10 peer-checked:text-rose-300 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400">{ item }</span>
+									</label>
+								}
+							</div>
+						</fieldset>
+						<fieldset>
+							<legend class="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(language, "Income", "Pemasukan") }</legend>
+							<div class="flex flex-wrap gap-2" role="radiogroup">
+								for idx, item := range incomeCategory {
+									<label class="cursor-pointer">
+										<input type="radio" id={ "radio-inc-" + strconv.Itoa(idx) } name="category" value={ item } x-model="category" class="peer sr-only"/>
+										<span class="inline-flex h-9 items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-slate-400 transition peer-checked:border-emerald-400/40 peer-checked:bg-emerald-500/10 peer-checked:text-emerald-300 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400">{ item }</span>
+									</label>
+								}
+							</div>
+						</fieldset>
+					</div>
+
+					<div class="flex flex-col gap-1.5">
+						<label for="amount_k" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(language, "Amount (×1000)", "Jumlah (×1000)") }</label>
+						<div class="flex items-center gap-2">
+							<span class="text-sm font-medium text-slate-500">{ currencySymbol(currencyCode) }</span>
+							<input x-model="amount_k_display" @input="onAmountKInput($event)" @change="recalcAmount()" type="text" inputmode="numeric" id="amount_k" name="amount_k" required class="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-right text-sm tabular-nums text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+							<span class="text-sm font-medium text-slate-500">K</span>
+						</div>
+						<input aria-hidden="true" x-model="trx_amount" type="text" id="amount" name="amount" readonly class="sr-only"/>
+					</div>
+
+					<div class="flex flex-col gap-1.5" x-data="{ transaction_datetime: '', transaction_at: '' }" x-init="$watch('transaction_datetime', value => transaction_at = value + ':00+07:00')">
+						<label for="transaction_shadow_date" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(language, "Date & Time (GMT+7)", "Tanggal & Waktu (GMT+7)") }</label>
+						<input type="datetime-local" id="transaction_shadow_date" required x-model="transaction_datetime" class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+						<input hidden type="text" id="transaction_at" name="transaction_at" x-model="transaction_at" readonly/>
+					</div>
+
+					<button type="submit" :disabled="loading" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-500 text-sm font-semibold text-white shadow-soft transition duration-200 ease-bounce-sm hover:-translate-y-0.5 hover:bg-brand-400 active:scale-95 disabled:pointer-events-none disabled:opacity-60">
+						<svg x-show="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle></svg>
+						<span x-show="!loading">{ tr(language, "Add Transaction", "Tambah Transaksi") }</span>
+						<span x-show="loading">{ tr(language, "Saving…", "Menyimpan…") }</span>
+					</button>
+				</form>
+			</div>
 		</section>
 	}
 }
