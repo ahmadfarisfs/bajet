@@ -54,18 +54,3 @@ jobs:
     steps:
       - uses: actions/deploy-pages@v4
         id: deployment
-
-  trigger-backend:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Render backend deploy
-        run: |
-          if [ -n "$HOOK" ]; then
-            curl -s -X POST "$HOOK"
-            echo "Render deploy triggered."
-          else
-            echo "RENDER_DEPLOY_HOOK not set, skipping."
-          fi
-        env:
-          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
