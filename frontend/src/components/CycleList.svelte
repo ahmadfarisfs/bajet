@@ -1,7 +1,7 @@
 <script>
   import { fmtShort, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
 
-  let { cycles, onSelect, onNew } = $props()
+  let { cycles, loading = false, onSelect, onNew } = $props()
 
   function summary(cycle) { return cycleSummary(cycle.periods ?? []) }
   function completedCount(cycle) { return (cycle.periods ?? []).filter(p => p.status === 'completed').length }
@@ -16,10 +16,14 @@
   </div>
 
   {#if cycles.length === 0}
-    <div class="empty">
-      <p>Belum ada cycle.</p>
-      <button class="btn-start" onclick={onNew}>Buat Cycle Pertama</button>
-    </div>
+    {#if loading}
+      <div class="empty"><span class="spinner"></span></div>
+    {:else}
+      <div class="empty">
+        <p>Belum ada cycle.</p>
+        <button class="btn-start" onclick={onNew}>Buat Cycle Pertama</button>
+      </div>
+    {/if}
   {:else}
     {#each cycles as cycle (cycle.id)}
       {@const s = summary(cycle)}
@@ -184,6 +188,17 @@
     color: var(--text-muted);
   }
   .empty p { margin-bottom: 16px; font-size: 15px; }
+
+  .spinner {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .btn-start {
     background: var(--primary);
     color: white;

@@ -15,6 +15,7 @@
   let signedIn = $state(!USES_BACKEND || isSignedIn())
   let user = $state(getUser())
   let gSigninEl = $state(null)
+  let loading = $state(false)
 
   $effect(() => {
     if (!USES_BACKEND || signedIn || !gSigninEl) return
@@ -36,11 +37,14 @@
   })
 
   async function loadCycles() {
+    loading = true
     try {
       cycles = await api.getCycles()
       loadError = ''
     } catch (e) {
       loadError = e.message
+    } finally {
+      loading = false
     }
   }
 
@@ -117,7 +121,7 @@
           <button onclick={loadCycles}>Coba lagi</button>
         </div>
       {:else}
-        <CycleList {cycles} onSelect={showDetail} onNew={showCreate} />
+        <CycleList {cycles} {loading} onSelect={showDetail} onNew={showCreate} />
       {/if}
     {:else if view === 'create'}
       <CreateCycle onCreated={onCreated} onCancel={showList} />
