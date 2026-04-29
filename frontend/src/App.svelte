@@ -33,9 +33,23 @@
 
 <div class="app">
   <header>
-    <button class="logo" onclick={showList}>💰 Bajet</button>
+    <button class="logo" onclick={showList}>
+      <svg width="26" height="26" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="512" height="512" rx="100" fill="#4f46e5"/>
+        <rect x="88"  y="210" width="96" height="215" rx="16" fill="white" opacity="0.65"/>
+        <rect x="208" y="118" width="96" height="307" rx="16" fill="white"/>
+        <rect x="328" y="158" width="96" height="267" rx="16" fill="white" opacity="0.85"/>
+        <rect x="68"  y="430" width="376" height="10"  rx="5"  fill="white" opacity="0.45"/>
+      </svg>
+      Bajet
+    </button>
     {#if view !== 'list'}
-      <button class="header-home" onclick={showList} title="Dashboard">⌂</button>
+      <button class="header-home" onclick={showList} title="Dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+        </svg>
+      </button>
     {/if}
   </header>
 
@@ -80,6 +94,9 @@
   }
 
   .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: none;
     font-size: 17px;
     font-weight: 800;
@@ -89,11 +106,15 @@
   }
 
   .header-home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
-    font-size: 18px;
     color: var(--text-muted);
-    padding: 4px 8px;
-    border-radius: 6px;
+    padding: 6px;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
   }
   .header-home:hover { background: var(--surface-2); color: var(--text); }
 
