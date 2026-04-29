@@ -21,7 +21,9 @@ func CheckIn(c echo.Context) error {
 	}
 
 	var period models.Period
-	if err := database.DB.First(&period, id).Error; err != nil {
+	if err := database.DB.
+		Joins("JOIN cycles ON cycles.id = periods.cycle_id AND cycles.user_id = ?", userID(c)).
+		First(&period, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "period not found"})
 	}
 	if period.Status == models.StatusCompleted {
@@ -45,7 +47,9 @@ func CheckIn(c echo.Context) error {
 func UndoCheckIn(c echo.Context) error {
 	id := c.Param("id")
 	var period models.Period
-	if err := database.DB.First(&period, id).Error; err != nil {
+	if err := database.DB.
+		Joins("JOIN cycles ON cycles.id = periods.cycle_id AND cycles.user_id = ?", userID(c)).
+		First(&period, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "period not found"})
 	}
 

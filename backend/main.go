@@ -29,10 +29,12 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
 	}))
 	e.Use(middleware.Recover())
 
 	api := e.Group("/api")
+	api.Use(handlers.AuthMiddleware)
 	api.GET("/cycles", handlers.GetCycles)
 	api.POST("/cycles", handlers.CreateCycle)
 	api.GET("/cycles/:id", handlers.GetCycle)

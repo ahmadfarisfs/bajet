@@ -25,6 +25,7 @@ const (
 
 type Cycle struct {
 	ID           uint         `json:"id" gorm:"primarykey"`
+	UserID       string       `json:"-" gorm:"index;not null;default:''"`
 	StartDate    time.Time    `json:"start_date"`
 	EndDate      time.Time    `json:"end_date"`
 	TotalBudget  float64      `json:"total_budget"`

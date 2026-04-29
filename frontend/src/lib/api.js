@@ -2,6 +2,8 @@
 // Otherwise fall back to localStorage so the app works on GitHub Pages
 // without any server.
 
+import { getToken, signOut } from './auth.js'
+
 const API_URL = import.meta.env.VITE_API_URL
 
 export const api = API_URL ? buildHttpApi(API_URL) : buildLocalApi()
@@ -10,11 +12,20 @@ export const api = API_URL ? buildHttpApi(API_URL) : buildLocalApi()
 
 function buildHttpApi(base) {
   async function req(method, path, body) {
+    const token = getToken()
+    const headers = {}
+    if (body)  headers['Content-Type']  = 'application/json'
+    if (token) headers['Authorization'] = `Bearer ${token}`
     const res = await fetch(`${base}${path}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : {},
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     })
+    if (res.status === 401) {
+      signOut()
+      window.location.reload()
+      return
+    }
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
     return data

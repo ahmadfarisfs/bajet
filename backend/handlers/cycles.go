@@ -19,7 +19,7 @@ type CreateCycleRequest struct {
 
 func GetCycles(c echo.Context) error {
 	var cycles []models.Cycle
-	database.DB.Order("created_at desc").Find(&cycles)
+	database.DB.Where("user_id = ?", userID(c)).Order("created_at desc").Find(&cycles)
 
 	for i := range cycles {
 		database.DB.Where("cycle_id = ?", cycles[i].ID).Order("period_number asc").Find(&cycles[i].Periods)
@@ -30,7 +30,7 @@ func GetCycles(c echo.Context) error {
 func GetCycle(c echo.Context) error {
 	id := c.Param("id")
 	var cycle models.Cycle
-	if err := database.DB.First(&cycle, id).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID(c)).First(&cycle).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "cycle not found"})
 	}
 	database.DB.Where("cycle_id = ?", cycle.ID).Order("period_number asc").Find(&cycle.Periods)
@@ -63,6 +63,7 @@ func CreateCycle(c echo.Context) error {
 	}
 
 	cycle := models.Cycle{
+		UserID:       userID(c),
 		StartDate:    startDate,
 		EndDate:      endDate,
 		TotalBudget:  req.TotalBudget,
@@ -84,7 +85,7 @@ func CreateCycle(c echo.Context) error {
 func DeleteCycle(c echo.Context) error {
 	id := c.Param("id")
 	var cycle models.Cycle
-	if err := database.DB.First(&cycle, id).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID(c)).First(&cycle).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "cycle not found"})
 	}
 	database.DB.Where("cycle_id = ?", cycle.ID).Delete(&models.Period{})
@@ -117,10 +118,12 @@ func generatePeriods(cycle models.Cycle) []models.Period {
 // calcDistribution splits totalDays into 4 periods.
 //
 // Equal mode: days distributed as evenly as possible, extra days front-loaded.
-//   30d → [8,8,7,7]  31d → [8,8,8,7]
+//
+//	30d → [8,8,7,7]  31d → [8,8,8,7]
 //
 // Behavioral mode: front-loads one extra day to P1, creating a descending pattern.
-//   30d → [9,7,7,7]  31d → [9,8,7,7]
+//
+//	30d → [9,7,7,7]  31d → [9,8,7,7]
 func calcDistribution(totalDays int, mode models.DivisionMode) [4]int {
 	base := totalDays / 4
 	extra := totalDays % 4
