@@ -96,13 +96,14 @@
     max-width: 480px;
     margin: 0 auto;
     padding: 16px;
-    padding-bottom: 40px;
+    padding-bottom: 48px;
   }
   .topbar { margin-bottom: 20px; }
   .back {
     background: none;
+    font-family: var(--font-heading);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--primary);
     padding: 6px 0;
   }
@@ -115,10 +116,12 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
+    border-top: 4px solid var(--sapphire-dark);
   }
   h2 {
-    font-size: 18px;
-    font-weight: 700;
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 800;
   }
 
   label {
@@ -140,6 +143,7 @@
     background: var(--surface);
     outline: none;
     width: 100%;
+    transition: border-color 0.15s;
   }
   label input:focus { border-color: var(--primary); }
 
@@ -150,6 +154,7 @@
     border-radius: var(--radius-sm);
     overflow: hidden;
     background: var(--surface);
+    transition: border-color 0.15s;
   }
   .input-row:focus-within { border-color: var(--primary); }
   .prefix {
@@ -168,8 +173,9 @@
     border: none !important;
     padding: 0 12px;
     height: 44px;
+    font-family: var(--font-heading);
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text);
     background: transparent;
     outline: none;
@@ -193,14 +199,14 @@
     gap: 2px;
     transition: all 0.15s;
   }
-  .toggle-btn strong { font-size: 13px; color: var(--text); }
-  .toggle-btn small { font-size: 11px; }
+  .toggle-btn strong { font-size: 13px; color: var(--text); font-family: var(--font-heading); }
+  .toggle-btn small  { font-size: 11px; }
   .toggle-btn.active {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    color: var(--primary);
+    background: var(--banana-light);
+    border-color: var(--banana-dark);
   }
-  .toggle-btn.active strong { color: var(--primary); }
+  .toggle-btn.active strong { color: var(--sapphire-dark); }
+  .toggle-btn.active small  { color: var(--sapphire-dark); }
 
   .err { font-size: 13px; color: var(--danger); margin-top: -8px; }
 
@@ -208,13 +214,15 @@
     width: 100%;
     padding: 14px;
     border-radius: var(--radius-sm);
+    font-family: var(--font-heading);
     font-size: 15px;
-    font-weight: 700;
-    background: var(--primary);
-    color: white;
+    font-weight: 800;
+    background: var(--sapphire-dark);
+    color: var(--banana);
+    letter-spacing: 0.2px;
     transition: background 0.15s;
   }
-  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn-primary:hover:not(:disabled) { background: var(--primary); color: white; }
   .btn-primary:disabled { opacity: 0.6; }
 
   .hint {

@@ -63,27 +63,27 @@ function makeIcon(size) {
   const pixels = new Uint8Array(size * size * 3)
   const s = size / 512
 
-  // Background: #4f46e5 (indigo)
-  drawRect(pixels, size, 0, 0, size, size, 0x4f, 0x46, 0xe5)
+  // Background: #154374 (Yale Blue / Kopi Seramu dark)
+  drawRect(pixels, size, 0, 0, size, size, 0x15, 0x43, 0x74)
 
-  // Bar chart (coordinates designed for 512×512, scaled by s)
+  // Bar chart bars in Banana Cream #F2E942
   const bars = [
-    { x: 88,  y: 210, w: 96, h: 215, op: 0.65 },
+    { x: 88,  y: 210, w: 96, h: 215, op: 0.55 },
     { x: 208, y: 118, w: 96, h: 307, op: 1.00 },
-    { x: 328, y: 158, w: 96, h: 267, op: 0.85 },
+    { x: 328, y: 158, w: 96, h: 267, op: 0.80 },
   ]
   for (const b of bars) {
     drawRect(pixels, size,
       Math.round(b.x*s), Math.round(b.y*s),
       Math.round(b.w*s), Math.round(b.h*s),
-      255, 255, 255, b.op)
+      0xF2, 0xE9, 0x42, b.op)
   }
 
   // Base line
   drawRect(pixels, size,
     Math.round(68*s), Math.round(430*s),
     Math.round(376*s), Math.max(1, Math.round(10*s)),
-    255, 255, 255, 0.45)
+    0xF2, 0xE9, 0x42, 0.35)
 
   return pixels
 }
