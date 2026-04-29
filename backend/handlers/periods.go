@@ -41,6 +41,7 @@ func CheckIn(c echo.Context) error {
 	period.Status = models.StatusCompleted
 
 	database.DB.Save(&period)
+	invalidateUser(userID(c))
 	return c.JSON(http.StatusOK, period)
 }
 
@@ -57,5 +58,6 @@ func UndoCheckIn(c echo.Context) error {
 	period.ResultType = ""
 	period.ResultAmount = 0
 	database.DB.Save(&period)
+	invalidateUser(userID(c))
 	return c.JSON(http.StatusOK, period)
 }

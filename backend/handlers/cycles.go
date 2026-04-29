@@ -18,22 +18,33 @@ type CreateCycleRequest struct {
 }
 
 func GetCycles(c echo.Context) error {
-	var cycles []models.Cycle
-	database.DB.Where("user_id = ?", userID(c)).Order("created_at desc").Find(&cycles)
+	uid := userID(c)
+	if cached, ok := cacheGetCycles(uid); ok {
+		return c.JSON(http.StatusOK, cached)
+	}
 
+	var cycles []models.Cycle
+	database.DB.Where("user_id = ?", uid).Order("created_at desc").Find(&cycles)
 	for i := range cycles {
 		database.DB.Where("cycle_id = ?", cycles[i].ID).Order("period_number asc").Find(&cycles[i].Periods)
 	}
+	cacheSetCycles(uid, cycles)
 	return c.JSON(http.StatusOK, cycles)
 }
 
 func GetCycle(c echo.Context) error {
 	id := c.Param("id")
+	uid := userID(c)
+	if cached, ok := cacheGetCycle(uid, id); ok {
+		return c.JSON(http.StatusOK, cached)
+	}
+
 	var cycle models.Cycle
-	if err := database.DB.Where("id = ? AND user_id = ?", id, userID(c)).First(&cycle).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", id, uid).First(&cycle).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "cycle not found"})
 	}
 	database.DB.Where("cycle_id = ?", cycle.ID).Order("period_number asc").Find(&cycle.Periods)
+	cacheSetCycle(uid, id, cycle)
 	return c.JSON(http.StatusOK, cycle)
 }
 
@@ -79,6 +90,7 @@ func CreateCycle(c echo.Context) error {
 	}
 
 	database.DB.Where("cycle_id = ?", cycle.ID).Order("period_number asc").Find(&cycle.Periods)
+	invalidateUser(userID(c))
 	return c.JSON(http.StatusCreated, cycle)
 }
 
@@ -90,6 +102,7 @@ func DeleteCycle(c echo.Context) error {
 	}
 	database.DB.Where("cycle_id = ?", cycle.ID).Delete(&models.Period{})
 	database.DB.Delete(&cycle)
+	invalidateUser(userID(c))
 	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }
 
