@@ -52,27 +52,50 @@ No transaction tracking. No categories. Just consistency.
 
 ## Development
 
+### Option A — Docker (recommended)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+```bash
+# 1. Copy and fill the env file (same Client ID as production)
+cp .env.example .env
+
+# 2. Start backend + frontend together
+docker compose up --build
+```
+
+| Service | URL |
+|---|---|
+| Frontend (Svelte dev server) | http://localhost:5173 |
+| Backend API | http://localhost:8080 |
+
+Data is persisted in a Docker volume (`bajet-data`) using SQLite — no database setup needed locally.
+
+> Make sure `http://localhost:5173` is added to **Authorized JavaScript origins** in your GCP OAuth client.
+
 ---
 
-## Development
+### Option B — Without Docker
 
-### Backend
-
+**Backend**
 ```bash
 cd backend
 go mod tidy
 go run .          # starts on :8080, uses bajet.db (SQLite) when DATABASE_URL is unset
 ```
 
-### Frontend
-
+**Frontend**
 ```bash
 cd frontend
 npm install
-npm run dev       # dev server — no VITE_API_URL set → uses localStorage (no backend needed)
+npm run dev       # no VITE_API_URL set → uses localStorage only
 ```
 
-Set `VITE_API_URL=http://localhost:8080` in a `.env.local` file inside `frontend/` to proxy to the local backend instead.
+To connect the frontend to your local backend, create `frontend/.env.local`:
+```
+VITE_API_URL=http://localhost:8080
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
 
 ---
 
