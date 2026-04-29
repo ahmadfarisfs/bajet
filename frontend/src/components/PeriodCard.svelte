@@ -118,14 +118,15 @@
 <style>
   .card {
     background: var(--surface);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     padding: 14px 16px;
-    border-left: 4px solid var(--border);
-    transition: border-color 0.2s;
+    border: 2px solid transparent;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s, box-shadow 0.15s;
   }
-  .card.open    { border-left-color: var(--primary); }
-  .card.current { border-left-color: var(--warning); background: #fffbf0; }
-  .card.completed { border-left-color: var(--border); }
+  .card.open      { border-color: var(--border); }
+  .card.current   { border-color: var(--warning); background: #fffdf5; }
+  .card.completed { border-color: transparent; opacity: 0.85; }
 
   .header {
     display: flex;
