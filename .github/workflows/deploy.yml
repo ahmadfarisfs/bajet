@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/period-budgeting-app-zxgAH
   workflow_dispatch:
 
 permissions:
