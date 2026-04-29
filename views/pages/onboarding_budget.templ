@@ -159,7 +159,11 @@ templ OnboardingBudgetPage(draft model.OnboardingDraft, csrfToken string) {
 				<div class="mb-8 space-y-2">
 					<p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">{ tr(draft.Language, "Step 2", "Langkah 2") }</p>
 					<h2 class="text-2xl font-bold tracking-tight text-white">{ tr(draft.Language, "Budget & Periods", "Anggaran & Periode") }</h2>
-					<p class="text-sm leading-relaxed text-slate-500">{ tr(draft.Language, "Set your total budget and choose how many periods to split it into. Preview the breakdown on the right.", "Atur total anggaran dan pilih jumlah periode pembagiannya. Lihat pratinjau pembagian di sebelah kanan.") }</p>
+					<p class="text-sm leading-relaxed text-slate-500">{ tr(draft.Language, "Set your total budget and split it into periods. After each period ends, you'll only need to submit one quick report for that period, so budgeting stays simple and period-based.", "Atur total anggaran lalu bagi ke beberapa periode. Setelah tiap periode berakhir, Anda cukup kirim satu laporan singkat untuk periode tersebut, jadi proses budgeting tetap sederhana dan berbasis periode.") }</p>
+				</div>
+				<div class="mb-6 rounded-xl border border-brand-500/25 bg-brand-500/[0.08] px-4 py-3">
+					<p class="text-xs font-semibold text-brand-200">{ tr(draft.Language, "Reporting flow", "Alur pelaporan") }</p>
+					<p class="mt-1 text-xs leading-relaxed text-slate-200">{ tr(draft.Language, "You don't need to log every transaction. At the end of each period, simply report the final result (surplus or deficit) once.", "Anda tidak perlu mencatat setiap transaksi. Di akhir setiap periode, cukup laporkan hasil akhirnya (sisa atau defisit) satu kali.") }</p>
 				</div>
 				if draft.Error != "" {
 					<div role="alert" class="mb-6 flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-4 py-3 text-sm text-rose-300">

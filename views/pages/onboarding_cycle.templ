@@ -25,6 +25,23 @@ templ OnboardingCyclePage(draft model.OnboardingDraft, csrfToken string) {
 					<h2 class="text-2xl font-bold tracking-tight text-white">{ tr(draft.Language, "Set Your Cycle", "Atur Siklus Anda") }</h2>
 					<p class="text-sm leading-relaxed text-slate-500">{ tr(draft.Language, "Choose the date window for this budgeting cycle. Next, you'll set a budget and periods.", "Pilih rentang tanggal untuk siklus anggaran ini. Selanjutnya, Anda akan mengatur anggaran dan periode.") }</p>
 				</div>
+				<div class="mb-6 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+					<p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "How it works", "Cara kerjanya") }</p>
+					<div class="mt-2 grid gap-2 sm:grid-cols-3">
+						<div class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+							<p class="text-[10px] uppercase tracking-wider text-brand-300">1</p>
+							<p class="mt-1 text-xs text-slate-300">{ tr(draft.Language, "Pick your cycle dates", "Pilih tanggal siklus") }</p>
+						</div>
+						<div class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+							<p class="text-[10px] uppercase tracking-wider text-brand-300">2</p>
+							<p class="mt-1 text-xs text-slate-300">{ tr(draft.Language, "Set budget and period plan", "Atur anggaran dan rencana periode") }</p>
+						</div>
+						<div class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+							<p class="text-[10px] uppercase tracking-wider text-brand-300">3</p>
+							<p class="mt-1 text-xs text-slate-300">{ tr(draft.Language, "Report once each period ends", "Lapor sekali saat periode selesai") }</p>
+						</div>
+					</div>
+				</div>
 				if draft.PreviousCycleEndDate != "" {
 					<div x-show="gapDays > 0" x-cloak class="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-300">
 						<svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.8v3.5M8 10.7v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -47,6 +64,7 @@ templ OnboardingCyclePage(draft model.OnboardingDraft, csrfToken string) {
 						<div class="flex flex-col gap-1.5">
 							<label for="start_date" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "Start Date", "Tanggal Mulai") }</label>
 							<input id="start_date" name="start_date" type="date" value={ draft.StartDate } x-model="startDate" @input="recalcGap()" required class="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-sm text-slate-100 outline-none transition focus:border-brand-500/60 focus:shadow-glow focus:ring-1 focus:ring-brand-500/30"/>
+							<p class="text-[11px] text-slate-600">{ tr(draft.Language, "Tip: start right after your previous cycle for cleaner tracking.", "Tip: mulai tepat setelah siklus sebelumnya agar tracking lebih rapi.") }</p>
 						</div>
 						<div class="flex flex-col gap-1.5">
 							<label for="end_date" class="text-xs font-semibold uppercase tracking-widest text-slate-400">{ tr(draft.Language, "End Date", "Tanggal Selesai") }</label>
