@@ -14,12 +14,11 @@
   let loadError = $state('')
   let signedIn = $state(!USES_BACKEND || isSignedIn())
   let user = $state(getUser())
-  let gSigninEl
+  let gSigninEl = $state(null)
 
-  onMount(() => {
-    if (!USES_BACKEND || signedIn) return
+  $effect(() => {
+    if (!USES_BACKEND || signedIn || !gSigninEl) return
     function renderBtn() {
-      if (!gSigninEl) return
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: ({ credential }) => {
