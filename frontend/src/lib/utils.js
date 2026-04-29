@@ -1,3 +1,33 @@
+export function parseDay(isoStr) {
+  if (!isoStr) return null
+  const [y, m, d] = isoStr.substring(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export function todayDate() {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+export function isActive(startStr, endStr) {
+  const t = todayDate()
+  return t >= parseDay(startStr) && t <= parseDay(endStr)
+}
+
+// Days remaining until end of period. 0 = today is last day. Negative = past.
+export function daysLeft(endStr) {
+  return Math.round((parseDay(endStr) - todayDate()) / 86400000)
+}
+
+// Days until period starts. Positive = future, 0 = starts today, negative = already started.
+export function daysUntil(startStr) {
+  return Math.round((parseDay(startStr) - todayDate()) / 86400000)
+}
+
+export function activePeriod(periods) {
+  return (periods ?? []).find(p => isActive(p.start_date, p.end_date)) ?? null
+}
+
 export function fmtDate(isoStr) {
   if (!isoStr) return ''
   const s = isoStr.substring(0, 10)
@@ -33,7 +63,6 @@ export function addDays(dateStr, n) {
 
 export function cycleSummary(periods) {
   let totalSaved = 0, totalDeficit = 0, totalSpent = 0
-
   for (const p of periods) {
     if (p.status !== 'completed') continue
     if (p.result_type === 'sisa') {
@@ -44,6 +73,5 @@ export function cycleSummary(periods) {
       totalSpent += p.budget + p.result_amount
     }
   }
-
   return { totalSaved, totalDeficit, net: totalSaved - totalDeficit, totalSpent }
 }

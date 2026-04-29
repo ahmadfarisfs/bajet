@@ -1,6 +1,6 @@
 <script>
   import { api } from '../lib/api.js'
-  import { fmtDate, fmtIDR, cycleSummary } from '../lib/utils.js'
+  import { fmtDate, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
   import PeriodCard from './PeriodCard.svelte'
 
   let { cycleId, onBack } = $props()
@@ -32,9 +32,11 @@
 
   $effect(() => { load() })
 
-  let summary = $derived(cycle ? cycleSummary(cycle.periods ?? []) : null)
+  let summary   = $derived(cycle ? cycleSummary(cycle.periods ?? []) : null)
   let completed = $derived(cycle ? (cycle.periods ?? []).filter(p => p.status === 'completed').length : 0)
-  let total = $derived(cycle ? (cycle.periods ?? []).length : 0)
+  let total     = $derived(cycle ? (cycle.periods ?? []).length : 0)
+  let isCurrent = $derived(cycle ? isActive(cycle.start_date, cycle.end_date) : false)
+  let cp        = $derived(cycle ? activePeriod(cycle.periods ?? []) : null)
 </script>
 
 <div class="view">
@@ -58,6 +60,19 @@
         <div class="progress-bar" style="width: {total ? (completed/total*100) : 0}%"></div>
       </div>
       <p class="progress-text">{completed}/{total} periode selesai</p>
+
+      {#if isCurrent && cp && cp.status === 'open'}
+        {@const left = daysLeft(cp.end_date)}
+        <div class="active-period-banner">
+          <div class="ap-left">
+            <span class="ap-label">Periode aktif</span>
+            <span class="ap-name">P{cp.period_number}</span>
+          </div>
+          <span class="ap-countdown" class:urgent={left <= 1}>
+            {left <= 0 ? 'Hari ini terakhir!' : `${left} hari lagi`}
+          </span>
+        </div>
+      {/if}
     </div>
 
     {#if summary && completed > 0}
@@ -167,6 +182,22 @@
     font-size: 12px;
     color: var(--text-muted);
   }
+
+  .active-period-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--warning-light);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--warning);
+  }
+  .ap-left { display: flex; flex-direction: column; gap: 1px; }
+  .ap-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--warning); }
+  .ap-name  { font-size: 16px; font-weight: 800; color: var(--warning); }
+  .ap-countdown { font-size: 14px; font-weight: 700; color: var(--warning); }
+  .ap-countdown.urgent { color: var(--danger); }
 
   .summary-grid {
     display: grid;

@@ -1,5 +1,5 @@
 <script>
-  import { fmtShort, fmtIDR } from '../lib/utils.js'
+  import { fmtShort, fmtIDR, isActive, daysLeft, daysUntil } from '../lib/utils.js'
   import { api } from '../lib/api.js'
 
   let { period, onUpdate } = $props()
@@ -9,6 +9,16 @@
   let amount = $state('')
   let loading = $state(false)
   let error = $state('')
+
+  let isCurrent  = $derived(period.status === 'open' && isActive(period.start_date, period.end_date))
+  let isFuture   = $derived(period.status === 'open' && daysUntil(period.start_date) > 0)
+  let remaining  = $derived(daysLeft(period.end_date))
+  let startsIn   = $derived(daysUntil(period.start_date))
+
+  function countdownLabel(n) {
+    if (n <= 0) return 'Hari ini terakhir!'
+    return `${n} hari lagi`
+  }
 
   async function submit() {
     const val = parseFloat(amount)
@@ -39,11 +49,21 @@
   }
 </script>
 
-<div class="card" class:completed={period.status === 'completed'} class:open={period.status === 'open'}>
+<div
+  class="card"
+  class:completed={period.status === 'completed'}
+  class:current={isCurrent}
+  class:open={period.status === 'open' && !isCurrent}
+>
   <div class="header">
     <div class="label">
-      <span class="badge">P{period.period_number}</span>
+      <span class="badge" class:badge-current={isCurrent}>P{period.period_number}</span>
       <span class="dates">{fmtShort(period.start_date)} – {fmtShort(period.end_date)}</span>
+      {#if isCurrent}
+        <span class="countdown" class:urgent={remaining <= 1}>{countdownLabel(remaining)}</span>
+      {:else if isFuture && period.status === 'open'}
+        <span class="upcoming">mulai {startsIn}h lagi</span>
+      {/if}
     </div>
     <div class="budget">Rp {fmtIDR(period.budget)}</div>
   </div>
@@ -88,7 +108,7 @@
         </div>
       </div>
     {:else}
-      <button class="checkin-btn" onclick={() => showForm = true}>
+      <button class="checkin-btn" class:checkin-current={isCurrent} onclick={() => showForm = true}>
         + Check-in
       </button>
     {/if}
@@ -103,7 +123,8 @@
     border-left: 4px solid var(--border);
     transition: border-color 0.2s;
   }
-  .card.open { border-left-color: var(--primary); }
+  .card.open    { border-left-color: var(--primary); }
+  .card.current { border-left-color: var(--warning); background: #fffbf0; }
   .card.completed { border-left-color: var(--border); }
 
   .header {
@@ -115,7 +136,10 @@
   .label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
   }
   .badge {
     background: var(--primary-light);
@@ -124,15 +148,43 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .badge-current {
+    background: var(--warning-light);
+    color: var(--warning);
   }
   .dates {
     font-size: 13px;
     color: var(--text-muted);
+    flex-shrink: 0;
   }
+
+  .countdown {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--warning-light);
+    color: var(--warning);
+    flex-shrink: 0;
+  }
+  .countdown.urgent {
+    background: var(--danger-light);
+    color: var(--danger);
+  }
+
+  .upcoming {
+    font-size: 11px;
+    color: var(--text-light);
+    flex-shrink: 0;
+  }
+
   .budget {
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
+    flex-shrink: 0;
   }
 
   .result {
@@ -160,11 +212,7 @@
   .undo-btn:hover { opacity: 1; }
 
   .form { margin-top: 12px; }
-  .toggle {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 10px;
-  }
+  .toggle { display: flex; gap: 4px; margin-bottom: 10px; }
   .toggle-btn {
     flex: 1;
     padding: 8px;
@@ -217,16 +265,9 @@
     background: transparent;
     outline: none;
   }
-  .err {
-    font-size: 12px;
-    color: var(--danger);
-    margin-top: 6px;
-  }
-  .actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }
+  .err { font-size: 12px; color: var(--danger); margin-top: 6px; }
+
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
   .btn-cancel {
     flex: 1;
     padding: 10px;
@@ -259,4 +300,9 @@
     transition: background 0.15s;
   }
   .checkin-btn:hover { background: #dde4fd; }
+  .checkin-current {
+    background: var(--warning-light);
+    color: var(--warning);
+  }
+  .checkin-current:hover { background: #fde68a; }
 </style>
