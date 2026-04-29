@@ -5,6 +5,7 @@
   import CycleList from './components/CycleList.svelte'
   import CycleDetail from './components/CycleDetail.svelte'
   import CreateCycle from './components/CreateCycle.svelte'
+  import Overview from './components/Overview.svelte'
 
   const USES_BACKEND = !!import.meta.env.VITE_API_URL
 
@@ -53,6 +54,7 @@
   function showCreate() { view = 'create' }
   function showDetail(id) { selectedId = id; view = 'detail' }
   function showList() { view = 'list'; loadCycles() }
+  function showOverview() { view = 'overview' }
 
   function onCreated(cycle) {
     view = 'detail'
@@ -67,6 +69,8 @@
     cycles = []
     view = 'list'
   }
+
+  let showTabBar = $derived(signedIn && (view === 'list' || view === 'overview'))
 </script>
 
 <div class="app">
@@ -81,7 +85,7 @@
       </svg>
       Bajet
     </button>
-    {#if view !== 'list'}
+    {#if view === 'detail' || view === 'create'}
       <button class="header-home" onclick={showList} title="Dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
@@ -123,12 +127,36 @@
       {:else}
         <CycleList {cycles} {loading} onSelect={showDetail} onNew={showCreate} />
       {/if}
+    {:else if view === 'overview'}
+      <Overview {cycles} />
     {:else if view === 'create'}
       <CreateCycle onCreated={onCreated} onCancel={showList} />
     {:else if view === 'detail'}
       <CycleDetail cycleId={selectedId} onBack={showList} />
     {/if}
   </main>
+
+  {#if showTabBar}
+    <nav class="tab-bar">
+      <button class="tab" class:active={view === 'list'} onclick={showList}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        <span>Cycle</span>
+      </button>
+      <button class="tab" class:active={view === 'overview'} onclick={showOverview}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6"  y1="20" x2="6"  y2="14"/>
+        </svg>
+        <span>Overview</span>
+      </button>
+    </nav>
+  {/if}
 </div>
 
 <style>
@@ -209,6 +237,36 @@
   .signin-screen p  { color: var(--text-muted); margin: 0 0 8px; }
 
   main { flex: 1; }
+
+  /* ── Bottom tab bar ── */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    height: 60px;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 8px;
+    transition: color 0.15s;
+  }
+  .tab.active { color: var(--primary); }
+  .tab.active svg { stroke: var(--primary); }
+  .tab:not(.active):hover { color: var(--text); }
 
   .api-error {
     text-align: center;
