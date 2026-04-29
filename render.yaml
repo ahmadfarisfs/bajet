@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bajet-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DB_PATH
+        value: /data/bajet.db
+    disk:
+      name: bajet-data
+      mountPath: /data
+      sizeGB: 1

@@ -35,6 +35,9 @@ jobs:
         working-directory: frontend
         env:
           VITE_BASE: /bajet/
+          # Set BACKEND_URL secret in repo settings after deploying the backend.
+          # Leave empty to use localStorage (no backend required).
+          VITE_API_URL: ${{ secrets.BACKEND_URL }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
