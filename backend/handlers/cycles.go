@@ -15,6 +15,7 @@ type CreateCycleRequest struct {
 	EndDate      string              `json:"end_date"`
 	TotalBudget  float64             `json:"total_budget"`
 	DivisionMode models.DivisionMode `json:"division_mode"`
+	NumPeriods   int                 `json:"num_periods"`
 }
 
 func GetCycles(c echo.Context) error {
@@ -72,6 +73,9 @@ func CreateCycle(c echo.Context) error {
 	if req.DivisionMode == "" {
 		req.DivisionMode = models.ModeEqual
 	}
+	if req.NumPeriods < 1 || req.NumPeriods > 12 {
+		req.NumPeriods = 4
+	}
 
 	cycle := models.Cycle{
 		UserID:       userID(c),
@@ -79,6 +83,7 @@ func CreateCycle(c echo.Context) error {
 		EndDate:      endDate,
 		TotalBudget:  req.TotalBudget,
 		DivisionMode: req.DivisionMode,
+		NumPeriods:   req.NumPeriods,
 	}
 	if err := database.DB.Create(&cycle).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -107,20 +112,24 @@ func DeleteCycle(c echo.Context) error {
 }
 
 func generatePeriods(cycle models.Cycle) []models.Period {
+	n := cycle.NumPeriods
+	if n < 1 {
+		n = 4
+	}
 	totalDays := int(cycle.EndDate.Sub(cycle.StartDate).Hours()/24) + 1
-	dist := calcDistribution(totalDays, cycle.DivisionMode)
-	budgetPerPeriod := math.Round(cycle.TotalBudget / 4)
+	dist := calcDistribution(totalDays, n, cycle.DivisionMode)
+	budgets := calcBudgets(cycle.TotalBudget, n, cycle.DivisionMode)
 
-	periods := make([]models.Period, 4)
+	periods := make([]models.Period, n)
 	current := cycle.StartDate
-	for i := 0; i < 4; i++ {
+	for i := 0; i < n; i++ {
 		pEnd := current.AddDate(0, 0, dist[i]-1)
 		periods[i] = models.Period{
 			CycleID:      cycle.ID,
 			PeriodNumber: i + 1,
 			StartDate:    current,
 			EndDate:      pEnd,
-			Budget:       budgetPerPeriod,
+			Budget:       budgets[i],
 			Status:       models.StatusOpen,
 		}
 		current = pEnd.AddDate(0, 0, 1)
@@ -128,33 +137,65 @@ func generatePeriods(cycle models.Cycle) []models.Period {
 	return periods
 }
 
-// calcDistribution splits totalDays into 4 periods.
-//
-// Equal mode: days distributed as evenly as possible, extra days front-loaded.
-//
-//	30d → [8,8,7,7]  31d → [8,8,8,7]
-//
-// Behavioral mode: front-loads one extra day to P1, creating a descending pattern.
-//
-//	30d → [9,7,7,7]  31d → [9,8,7,7]
-func calcDistribution(totalDays int, mode models.DivisionMode) [4]int {
-	base := totalDays / 4
-	extra := totalDays % 4
+// calcBudgets returns the budget for each period based on division mode.
+// Progresif: back-loaded (last period gets most), Menurun: front-loaded (first gets most).
+// Equal/Behavioral: equal budget per period.
+func calcBudgets(totalBudget float64, n int, mode models.DivisionMode) []float64 {
+	budgets := make([]float64, n)
+	switch mode {
+	case models.ModeProgresif:
+		// Back-loaded: weight[i] = i+1
+		totalWeight := n * (n + 1) / 2
+		var sum float64
+		for i := 0; i < n-1; i++ {
+			b := math.Floor(totalBudget * float64(i+1) / float64(totalWeight))
+			budgets[i] = b
+			sum += b
+		}
+		budgets[n-1] = totalBudget - sum
+	case models.ModeMenurun:
+		// Front-loaded: weight[i] = n-i
+		totalWeight := n * (n + 1) / 2
+		var sum float64
+		for i := 0; i < n-1; i++ {
+			b := math.Floor(totalBudget * float64(n-i) / float64(totalWeight))
+			budgets[i] = b
+			sum += b
+		}
+		budgets[n-1] = totalBudget - sum
+	default:
+		// equal / behavioral: equal budget per period
+		base := math.Round(totalBudget / float64(n))
+		for i := range budgets {
+			budgets[i] = base
+		}
+	}
+	return budgets
+}
 
-	dist := [4]int{base, base, base, base}
+// calcDistribution splits totalDays into n periods.
+//
+// Equal/Menurun/Progresif: days distributed as evenly as possible, extra days front-loaded.
+// Behavioral: same as Equal but P1 gets one extra day stolen from the last enriched period.
+func calcDistribution(totalDays int, n int, mode models.DivisionMode) []int {
+	base := totalDays / n
+	extra := totalDays % n
+
+	dist := make([]int, n)
+	for i := range dist {
+		dist[i] = base
+	}
 	for i := 0; i < extra; i++ {
 		dist[i]++
 	}
 
 	if mode == models.ModeBehavioral {
 		if extra >= 2 {
-			// Shift one day from the last enriched position to P1
 			dist[0]++
 			dist[extra-1]--
 		} else {
-			// Take from P4 to give P1 an extra day
 			dist[0]++
-			dist[3]--
+			dist[n-1]--
 		}
 	}
 

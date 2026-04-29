@@ -7,6 +7,8 @@ type DivisionMode string
 const (
 	ModeEqual      DivisionMode = "equal"
 	ModeBehavioral DivisionMode = "behavioral"
+	ModeMenurun    DivisionMode = "menurun"
+	ModeProgresif  DivisionMode = "progresif"
 )
 
 type PeriodStatus string
@@ -30,6 +32,7 @@ type Cycle struct {
 	EndDate      time.Time    `json:"end_date"`
 	TotalBudget  float64      `json:"total_budget"`
 	DivisionMode DivisionMode `json:"division_mode"`
+	NumPeriods   int          `json:"num_periods" gorm:"not null;default:4"`
 	CreatedAt    time.Time    `json:"created_at"`
 	Periods      []Period     `json:"periods" gorm:"foreignKey:CycleID"`
 }

@@ -59,16 +59,41 @@ function buildLocalApi() {
     localStorage.setItem(KEY, JSON.stringify(data))
   }
 
-  function calcDistribution(totalDays, mode) {
-    const base = Math.floor(totalDays / 4)
-    const extra = totalDays % 4
-    const dist = [base, base, base, base]
+  function calcDistribution(totalDays, n, mode) {
+    const base = Math.floor(totalDays / n)
+    const extra = totalDays % n
+    const dist = Array(n).fill(base)
     for (let i = 0; i < extra; i++) dist[i]++
     if (mode === 'behavioral') {
       if (extra >= 2) { dist[0]++; dist[extra - 1]-- }
-      else            { dist[0]++; dist[3]-- }
+      else            { dist[0]++; dist[n - 1]-- }
     }
     return dist
+  }
+
+  function calcBudgets(totalBudget, n, mode) {
+    const budgets = Array(n).fill(0)
+    if (mode === 'progresif') {
+      const tw = n * (n + 1) / 2
+      let sum = 0
+      for (let i = 0; i < n - 1; i++) {
+        const b = Math.floor(totalBudget * (i + 1) / tw)
+        budgets[i] = b; sum += b
+      }
+      budgets[n - 1] = totalBudget - sum
+    } else if (mode === 'menurun') {
+      const tw = n * (n + 1) / 2
+      let sum = 0
+      for (let i = 0; i < n - 1; i++) {
+        const b = Math.floor(totalBudget * (n - i) / tw)
+        budgets[i] = b; sum += b
+      }
+      budgets[n - 1] = totalBudget - sum
+    } else {
+      const base = Math.round(totalBudget / n)
+      budgets.fill(base)
+    }
+    return budgets
   }
 
   function shiftDate(dateStr, n) {
@@ -83,17 +108,18 @@ function buildLocalApi() {
     return Math.round((new Date(ey, em-1, ed) - new Date(sy, sm-1, sd)) / 86400000) + 1
   }
 
-  function buildPeriods(cycleId, startDate, endDate, totalBudget, mode, seq) {
-    const dist = calcDistribution(daysBetween(startDate, endDate), mode)
-    const budget = Math.round(totalBudget / 4)
+  function buildPeriods(cycleId, startDate, endDate, totalBudget, mode, seq, numPeriods) {
+    const n = Math.min(Math.max(numPeriods || 4, 1), 12)
+    const dist = calcDistribution(daysBetween(startDate, endDate), n, mode)
+    const budgets = calcBudgets(totalBudget, n, mode)
     const now = new Date().toISOString()
     const periods = []
     let cur = startDate
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < n; i++) {
       seq.period++
       const pEnd = shiftDate(cur, dist[i] - 1)
       periods.push({ id: seq.period, cycle_id: cycleId, period_number: i + 1,
-        start_date: cur, end_date: pEnd, budget, status: 'open',
+        start_date: cur, end_date: pEnd, budget: budgets[i], status: 'open',
         result_type: '', result_amount: 0, created_at: now })
       cur = shiftDate(pEnd, 1)
     }
@@ -113,17 +139,18 @@ function buildLocalApi() {
       return c ? ok(c) : fail('cycle not found')
     },
 
-    createCycle({ start_date, end_date, total_budget, division_mode }) {
+    createCycle({ start_date, end_date, total_budget, division_mode, num_periods }) {
       const data = load()
       data.seq.cycle  = (data.seq.cycle  || 0) + 1
       data.seq.period = (data.seq.period || 0)
       const mode = division_mode || 'equal'
+      const n    = Math.min(Math.max(num_periods || 4, 1), 12)
       const now  = new Date().toISOString()
       const cycle = {
         id: data.seq.cycle, start_date, end_date,
         total_budget: Number(total_budget), division_mode: mode,
-        created_at: now,
-        periods: buildPeriods(data.seq.cycle, start_date, end_date, total_budget, mode, data.seq),
+        num_periods: n, created_at: now,
+        periods: buildPeriods(data.seq.cycle, start_date, end_date, total_budget, mode, data.seq, n),
       }
       data.cycles.push(cycle)
       persist(data)
