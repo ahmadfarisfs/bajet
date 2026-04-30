@@ -57,7 +57,9 @@
 >
   <div class="header">
     <div class="label">
-      <span class="badge" class:badge-current={isCurrent}>P{period.period_number}</span>
+      <span class="badge" class:badge-current={isCurrent} class:badge-future={isFuture && !isCurrent}>
+        P{period.period_number}
+      </span>
       <span class="dates">{fmtShort(period.start_date)} – {fmtShort(period.end_date)}</span>
       {#if isCurrent}
         <span class="countdown" class:urgent={remaining <= 1}>{countdownLabel(remaining)}</span>
@@ -124,9 +126,9 @@
     box-shadow: var(--shadow-sm);
     transition: border-color 0.2s, box-shadow 0.15s;
   }
-  .card.open      { border-color: var(--border); }
-  .card.current   { border-color: var(--warning); background: #fffdf5; }
-  .card.completed { border-color: transparent; opacity: 0.85; }
+  .card.open      { border-left-color: var(--primary); }
+  .card.current   { border-left-color: var(--pumpkin); background: #fffaf5; }
+  .card.completed { border-left-color: var(--border); opacity: 0.85; }
 
   .header {
     display: flex;
@@ -143,8 +145,9 @@
     min-width: 0;
   }
   .badge {
-    background: var(--primary-light);
+    background: var(--sapphire-light);
     color: var(--primary);
+    font-family: var(--font-heading);
     font-size: 12px;
     font-weight: 700;
     padding: 2px 8px;
@@ -152,8 +155,12 @@
     flex-shrink: 0;
   }
   .badge-current {
-    background: var(--warning-light);
-    color: var(--warning);
+    background: var(--pumpkin);
+    color: white;
+  }
+  .badge-future {
+    background: var(--border);
+    color: var(--text-muted);
   }
   .dates {
     font-size: 13px;
@@ -166,8 +173,8 @@
     font-weight: 700;
     padding: 2px 7px;
     border-radius: 20px;
-    background: var(--warning-light);
-    color: var(--warning);
+    background: var(--pumpkin-light);
+    color: var(--pumpkin);
     flex-shrink: 0;
   }
   .countdown.urgent {
@@ -182,8 +189,9 @@
   }
 
   .budget {
+    font-family: var(--font-heading);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text);
     flex-shrink: 0;
   }
@@ -194,21 +202,22 @@
     gap: 8px;
     margin-top: 10px;
     padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xs);
     font-size: 14px;
   }
-  .result.sisa { background: var(--success-light); color: var(--success); }
-  .result.defisit { background: var(--danger-light); color: var(--danger); }
+  .result.sisa    { background: var(--success-light); color: var(--success); }
+  .result.defisit { background: var(--danger-light);  color: var(--danger);  }
 
-  .result-type { font-weight: 600; }
-  .result-amount { font-weight: 700; flex: 1; }
+  .result-type   { font-weight: 600; }
+  .result-amount { font-family: var(--font-heading); font-weight: 700; flex: 1; }
   .undo-btn {
     font-size: 11px;
     padding: 3px 8px;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
     background: rgba(0,0,0,0.08);
     color: inherit;
     opacity: 0.7;
+    transition: opacity 0.15s;
   }
   .undo-btn:hover { opacity: 1; }
 
@@ -219,7 +228,7 @@
     padding: 8px;
     border-radius: var(--radius-sm);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     background: var(--surface-2);
     color: var(--text-muted);
     border: 2px solid transparent;
@@ -260,8 +269,9 @@
     border: none;
     padding: 0 12px;
     height: 40px;
+    font-family: var(--font-heading);
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text);
     background: transparent;
     outline: none;
@@ -277,16 +287,21 @@
     font-weight: 600;
     background: var(--surface-2);
     color: var(--text-muted);
+    transition: background 0.15s;
   }
+  .btn-cancel:hover { background: var(--border); }
   .btn-submit {
     flex: 2;
     padding: 10px;
     border-radius: var(--radius-sm);
+    font-family: var(--font-heading);
     font-size: 14px;
-    font-weight: 600;
-    background: var(--primary);
-    color: white;
+    font-weight: 700;
+    background: var(--sapphire-dark);
+    color: var(--banana);
+    transition: background 0.15s;
   }
+  .btn-submit:hover:not(:disabled) { background: var(--primary); color: white; }
   .btn-submit:disabled { opacity: 0.6; }
 
   .checkin-btn {
@@ -294,16 +309,18 @@
     margin-top: 10px;
     padding: 9px;
     border-radius: var(--radius-sm);
+    font-family: var(--font-heading);
     font-size: 13px;
-    font-weight: 600;
-    background: var(--primary-light);
+    font-weight: 700;
+    background: var(--sapphire-light);
     color: var(--primary);
     transition: background 0.15s;
   }
-  .checkin-btn:hover { background: #dde4fd; }
+  .checkin-btn:hover { background: #c8dcf5; }
   .checkin-current {
-    background: var(--warning-light);
-    color: var(--warning);
+    background: var(--pumpkin-light);
+    color: var(--pumpkin);
+    border: 1.5px solid var(--pumpkin);
   }
-  .checkin-current:hover { background: #fde68a; }
+  .checkin-current:hover { background: #ffe5c2; }
 </style>

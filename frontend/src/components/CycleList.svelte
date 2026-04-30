@@ -20,6 +20,15 @@
       <div class="empty"><span class="spinner"></span></div>
     {:else}
       <div class="empty">
+        <div class="empty-icon">
+          <svg width="52" height="52" viewBox="0 0 512 512" fill="none">
+            <rect width="512" height="512" rx="110" fill="#154374"/>
+            <rect x="88"  y="210" width="96" height="215" rx="16" fill="#F2E942" opacity="0.55"/>
+            <rect x="208" y="118" width="96" height="307" rx="16" fill="#F2E942"/>
+            <rect x="328" y="158" width="96" height="267" rx="16" fill="#F2E942" opacity="0.80"/>
+            <rect x="68"  y="430" width="376" height="10"  rx="5"  fill="#F2E942" opacity="0.35"/>
+          </svg>
+        </div>
         <p>Belum ada cycle.</p>
         <button class="btn-start" onclick={onNew}>Buat Cycle Pertama</button>
       </div>
@@ -77,28 +86,36 @@
 
 <style>
   .list {
-    padding: 16px;
+    padding: 20px 16px;
     max-width: 480px;
     margin: 0 auto;
-    padding-bottom: 40px;
+    padding-bottom: 48px;
   }
   .list-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
   }
-  h2 { font-size: 18px; font-weight: 700; }
+  h2 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+  }
 
   .btn-new {
-    background: var(--primary);
-    color: white;
+    background: var(--sapphire-dark);
+    color: var(--banana);
+    font-family: var(--font-heading);
     font-size: 13px;
     font-weight: 700;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
+    letter-spacing: 0.2px;
+    transition: background 0.15s;
   }
-  .btn-new:hover { background: var(--primary-dark); }
+  .btn-new:hover { background: var(--primary); color: white; }
 
   .cycle-card {
     width: 100%;
@@ -113,7 +130,10 @@
     border: 2px solid transparent;
   }
   .cycle-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-  .cycle-card.active { border-color: var(--warning); background: #fffdf5; }
+  .cycle-card.active {
+    border-color: var(--banana-dark);
+    background: var(--banana-light);
+  }
 
   .top {
     display: flex;
@@ -129,20 +149,33 @@
     margin-bottom: 3px;
     flex-wrap: wrap;
   }
-  .date-range { font-size: 15px; font-weight: 700; color: var(--text); }
+  .date-range {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
   .aktif-badge {
+    font-family: var(--font-heading);
     font-size: 10px;
     font-weight: 800;
-    letter-spacing: 0.5px;
-    padding: 2px 7px;
+    letter-spacing: 0.8px;
+    padding: 3px 8px;
     border-radius: 20px;
-    background: var(--warning);
-    color: white;
+    background: var(--sapphire-dark);
+    color: var(--banana);
   }
   .budget-text { font-size: 12px; color: var(--text-muted); }
 
   .right { text-align: right; flex-shrink: 0; margin-left: 8px; }
-  .period-count { font-size: 20px; font-weight: 700; color: var(--primary); line-height: 1; }
+  .period-count {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .cycle-card.active .period-count { color: var(--sapphire-dark); }
   .period-label { font-size: 11px; color: var(--text-muted); }
 
   .progress-bar-wrap {
@@ -158,18 +191,19 @@
     border-radius: 3px;
     transition: width 0.4s;
   }
-  .cycle-card.active .progress-bar { background: var(--warning); }
+  .cycle-card.active .progress-bar { background: var(--sapphire-dark); }
 
   .current-period-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--warning-light);
-    border-radius: var(--radius-sm);
+    background: var(--pumpkin-light);
+    border-radius: var(--radius-xs);
     padding: 7px 10px;
+    border-left: 3px solid var(--pumpkin);
   }
-  .cp-label { font-size: 12px; font-weight: 600; color: var(--warning); }
-  .cp-days  { font-size: 12px; font-weight: 700; color: var(--warning); }
+  .cp-label { font-size: 12px; font-weight: 600; color: var(--pumpkin); }
+  .cp-days  { font-size: 12px; font-weight: 700; color: var(--pumpkin); }
   .cp-days.urgent { color: var(--danger); }
 
   .stats { display: flex; gap: 8px; }
@@ -187,7 +221,8 @@
     padding: 60px 20px;
     color: var(--text-muted);
   }
-  .empty p { margin-bottom: 16px; font-size: 15px; }
+  .empty-icon { margin-bottom: 20px; display: flex; justify-content: center; }
+  .empty p { margin-bottom: 20px; font-size: 15px; font-weight: 500; }
 
   .spinner {
     display: inline-block;
@@ -200,11 +235,14 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .btn-start {
-    background: var(--primary);
-    color: white;
-    font-size: 14px;
+    background: var(--sapphire-dark);
+    color: var(--banana);
+    font-family: var(--font-heading);
+    font-size: 15px;
     font-weight: 700;
-    padding: 12px 24px;
+    padding: 14px 28px;
     border-radius: var(--radius-sm);
+    transition: background 0.15s;
   }
+  .btn-start:hover { background: var(--primary); color: white; }
 </style>

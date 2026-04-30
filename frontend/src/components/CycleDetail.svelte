@@ -109,7 +109,7 @@
     max-width: 480px;
     margin: 0 auto;
     padding: 16px;
-    padding-bottom: 40px;
+    padding-bottom: 48px;
   }
   .topbar {
     display: flex;
@@ -119,8 +119,9 @@
   }
   .back {
     background: none;
+    font-family: var(--font-heading);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--primary);
     padding: 6px 0;
   }
@@ -128,8 +129,9 @@
     background: none;
     font-size: 18px;
     padding: 6px;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
     color: var(--text-muted);
+    transition: background 0.15s;
   }
   .del-btn:hover { background: var(--danger-light); color: var(--danger); }
 
@@ -137,8 +139,9 @@
     background: var(--surface);
     border-radius: var(--radius);
     padding: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     box-shadow: var(--shadow-sm);
+    border-top: 4px solid var(--primary);
   }
   .cycle-title {
     display: flex;
@@ -148,16 +151,17 @@
     margin-bottom: 6px;
   }
   h1 {
-    font-size: 16px;
-    font-weight: 700;
+    font-family: var(--font-heading);
+    font-size: 17px;
+    font-weight: 800;
     color: var(--text);
   }
   .mode-badge {
     font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
+    font-weight: 700;
+    padding: 3px 8px;
     border-radius: 20px;
-    background: var(--primary-light);
+    background: var(--sapphire-light);
     color: var(--primary);
   }
   .budget-label {
@@ -187,23 +191,39 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 12px;
-    padding: 10px 14px;
-    background: var(--warning-light);
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--pumpkin-light);
     border-radius: var(--radius-sm);
-    border-left: 3px solid var(--warning);
+    border-left: 4px solid var(--pumpkin);
   }
   .ap-left { display: flex; flex-direction: column; gap: 1px; }
-  .ap-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--warning); }
-  .ap-name  { font-size: 16px; font-weight: 800; color: var(--warning); }
-  .ap-countdown { font-size: 14px; font-weight: 700; color: var(--warning); }
+  .ap-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--pumpkin);
+  }
+  .ap-name {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pumpkin);
+  }
+  .ap-countdown {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--pumpkin);
+  }
   .ap-countdown.urgent { color: var(--danger); }
 
   .summary-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   .summary-card {
     background: var(--surface);
@@ -212,26 +232,27 @@
     box-shadow: var(--shadow-sm);
   }
   .summary-card.green { background: var(--success-light); }
-  .summary-card.red { background: var(--danger-light); }
+  .summary-card.red   { background: var(--danger-light);  }
 
   .s-label {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
   }
   .summary-card.green .s-label { color: var(--success); }
-  .summary-card.red .s-label { color: var(--danger); }
+  .summary-card.red   .s-label { color: var(--danger);  }
 
   .s-val {
+    font-family: var(--font-heading);
     font-size: 15px;
     font-weight: 700;
     color: var(--text);
   }
   .summary-card.green .s-val { color: var(--success); }
-  .summary-card.red .s-val { color: var(--danger); }
+  .summary-card.red   .s-val { color: var(--danger);  }
 
   .periods {
     display: flex;
