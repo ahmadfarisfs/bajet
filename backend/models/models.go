@@ -37,6 +37,14 @@ type Cycle struct {
 	Periods      []Period     `json:"periods" gorm:"foreignKey:CycleID"`
 }
 
+type Waitlist struct {
+	ID        uint      `json:"id" gorm:"primarykey"`
+	Email     string    `json:"email" gorm:"uniqueIndex;not null"`
+	Source    string    `json:"source" gorm:"default:'landing'"`
+	IP        string    `json:"ip"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type Period struct {
 	ID           uint         `json:"id" gorm:"primarykey"`
 	CycleID      uint         `json:"cycle_id"`

@@ -86,10 +86,9 @@
 
 <style>
   .list {
-    padding: 20px 16px;
+    padding: 20px 16px 80px;
     max-width: 480px;
     margin: 0 auto;
-    padding-bottom: 48px;
   }
   .list-header {
     display: flex;
@@ -112,7 +111,6 @@
     font-weight: 700;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
-    letter-spacing: 0.2px;
     transition: background 0.15s;
   }
   .btn-new:hover { background: var(--primary); color: white; }
@@ -221,19 +219,19 @@
     padding: 60px 20px;
     color: var(--text-muted);
   }
-  .empty-icon { margin-bottom: 20px; display: flex; justify-content: center; }
+  .empty-icon { display: flex; justify-content: center; margin-bottom: 20px; }
   .empty p { margin-bottom: 20px; font-size: 15px; font-weight: 500; }
 
   .spinner {
     display: inline-block;
-    width: 28px;
-    height: 28px;
+    width: 28px; height: 28px;
     border: 3px solid var(--border);
-    border-top-color: var(--primary);
+    border-top-color: var(--sapphire-dark);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
   .btn-start {
     background: var(--sapphire-dark);
     color: var(--banana);

@@ -7,48 +7,48 @@
 }
 
 :root {
-  /* Kopi Seramu primary palette */
-  --sapphire:        #2075D0;
-  --sapphire-dark:   #154374;
-  --sapphire-light:  #dce9f9;
-  --banana:          #F2E942;
-  --banana-dark:     #d4ca00;
-  --banana-light:    #fdfbe8;
-  --pumpkin:         #EE6F00;
-  --pumpkin-light:   #fff0e0;
+  /* Kopi Seramu brand palette */
+  --sapphire:       #2075D0;
+  --sapphire-dark:  #154374;
+  --sapphire-light: #dce9f9;
+  --banana:         #F2E942;
+  --banana-dark:    #d4ca00;
+  --banana-light:   #fdfbe8;
+  --pumpkin:        #EE6F00;
+  --pumpkin-light:  #fff0e0;
 
-  /* Semantic */
-  --primary:         var(--sapphire);
-  --primary-dark:    var(--sapphire-dark);
-  --primary-light:   var(--sapphire-light);
-  --warning:         var(--pumpkin);
-  --warning-light:   var(--pumpkin-light);
-  --success:         #16a34a;
-  --success-light:   #dcfce7;
-  --danger:          #dc2626;
-  --danger-light:    #fee2e2;
+  /* Semantic aliases */
+  --primary:        var(--sapphire);
+  --primary-dark:   var(--sapphire-dark);
+  --primary-light:  var(--sapphire-light);
+  --warning:        var(--pumpkin);
+  --warning-light:  var(--pumpkin-light);
+  --success:        #16a34a;
+  --success-light:  #dcfce7;
+  --danger:         #dc2626;
+  --danger-light:   #fee2e2;
 
-  /* Surface */
-  --bg:              #f4f3ef;
-  --surface:         #ffffff;
-  --surface-2:       #f8f7f4;
-  --border:          #e4e2db;
+  /* Surfaces */
+  --bg:        #f4f3ef;
+  --surface:   #ffffff;
+  --surface-2: #f8f7f4;
+  --border:    #e4e2db;
 
   /* Text */
-  --text:            #0f1923;
-  --text-muted:      #6b6b6b;
-  --text-light:      #9e9e9e;
+  --text:       #0f1923;
+  --text-muted: #6b6b6b;
+  --text-light: #9e9e9e;
 
   /* Elevation */
-  --shadow-sm:       0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow:          0 4px 16px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 4px 16px rgba(0,0,0,0.08);
 
   /* Shape */
   --radius:    14px;
   --radius-sm: 9px;
   --radius-xs: 6px;
 
-  /* Fonts */
+  /* Typography */
   --font-heading: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body:    'Albert Sans', system-ui, sans-serif;
 }
@@ -62,9 +62,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-#app {
-  min-height: 100%;
-}
+#app { min-height: 100%; }
 
 button {
   font-family: inherit;
@@ -73,9 +71,7 @@ button {
   outline: none;
 }
 
-input {
-  font-family: inherit;
-}
+input { font-family: inherit; }
 
 a {
   color: inherit;

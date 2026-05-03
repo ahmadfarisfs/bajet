@@ -3,7 +3,6 @@
 
   let { cycles } = $props()
 
-  // Aggregate across all completed-or-partial cycles that have any completed periods
   let stats = $derived.by(() => {
     let totalSaved = 0, totalDeficit = 0, totalBudget = 0, periodsCompleted = 0, sisaCount = 0
     for (const c of cycles) {
@@ -20,7 +19,6 @@
     return { totalSaved, totalDeficit, net, totalBudget, periodsCompleted, savingsRate, sisaCount }
   })
 
-  // Per-cycle data for chart — only cycles with at least one completed period
   let chartData = $derived.by(() => {
     return cycles
       .map(c => {
@@ -29,7 +27,7 @@
         return { cycle: c, summary: s, done }
       })
       .filter(d => d.done > 0)
-      .slice(-8) // last 8 cycles
+      .slice(-8)
   })
 
   let maxAbs = $derived(
@@ -38,7 +36,6 @@
       : 1
   )
 
-  // Current streak: consecutive latest periods with sisa
   let streak = $derived.by(() => {
     const allCompleted = []
     for (const c of [...cycles].reverse()) {
@@ -150,7 +147,7 @@
           {@const pct = Math.abs(d.summary.net) / maxAbs * 100}
           {@const isPos = d.summary.net >= 0}
           <div class="chart-row">
-            <div class="chart-label">{cycleLabel(d.cycle.start_date ?? d.cycle)}</div>
+            <div class="chart-label">{cycleLabel(d.cycle)}</div>
             <div class="chart-bar-wrap">
               <div
                 class="chart-bar"
@@ -203,16 +200,16 @@
 
   /* ── Hero ── */
   .hero {
-    border-radius: 16px;
+    border-radius: var(--radius);
     padding: 24px 20px 20px;
     position: relative;
     overflow: hidden;
   }
   .hero-positive {
-    background: linear-gradient(135deg, #154374 0%, #2075D0 100%);
+    background: linear-gradient(135deg, var(--sapphire-dark) 0%, var(--primary) 100%);
   }
   .hero-negative {
-    background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+    background: linear-gradient(135deg, #7f1d1d 0%, var(--danger) 100%);
   }
   .hero::before {
     content: '';
@@ -238,14 +235,14 @@
     margin-bottom: 6px;
   }
   .hero-amount {
+    font-family: var(--font-heading);
     font-size: 32px;
     font-weight: 800;
-    color: #F2E942;
     line-height: 1.1;
     margin-bottom: 6px;
     letter-spacing: -1px;
   }
-  .hero-positive .hero-amount { color: #F2E942; }
+  .hero-positive .hero-amount { color: var(--banana); }
   .hero-negative .hero-amount { color: #fca5a5; }
   .hero-sub {
     font-size: 12px;
@@ -258,7 +255,7 @@
     margin-top: 14px;
     background: rgba(242,233,66,0.18);
     border: 1px solid rgba(242,233,66,0.35);
-    color: #F2E942;
+    color: var(--banana);
     font-size: 12px;
     font-weight: 700;
     padding: 5px 12px;
@@ -273,16 +270,16 @@
   }
   .stat-card {
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     padding: 14px 12px;
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    box-shadow: var(--shadow-sm);
   }
   .stat-icon {
     width: 34px; height: 34px;
-    border-radius: 9px;
+    border-radius: var(--radius-xs);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -290,10 +287,10 @@
     font-weight: 800;
     flex-shrink: 0;
   }
-  .stat-icon.green { background: #dcfce7; color: #16a34a; }
-  .stat-icon.red   { background: #fee2e2; color: #dc2626; }
-  .stat-icon.blue  { background: #dce9f9; color: #2075D0; }
-  .stat-icon.navy  { background: #e0e8f4; color: #154374; }
+  .stat-icon.green { background: var(--success-light); color: var(--success); }
+  .stat-icon.red   { background: var(--danger-light);  color: var(--danger);  }
+  .stat-icon.blue  { background: var(--sapphire-light); color: var(--primary); }
+  .stat-icon.navy  { background: var(--sapphire-light); color: var(--sapphire-dark); }
   .stat-body { min-width: 0; }
   .stat-label {
     font-size: 11px;
@@ -304,23 +301,24 @@
     margin-bottom: 2px;
   }
   .stat-val {
+    font-family: var(--font-heading);
     font-size: 13px;
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .stat-val.green { color: #16a34a; }
-  .stat-val.red   { color: #dc2626; }
-  .stat-val.blue  { color: #2075D0; font-size: 18px; }
-  .stat-val.navy  { color: #154374; }
+  .stat-val.green { color: var(--success); }
+  .stat-val.red   { color: var(--danger); }
+  .stat-val.blue  { color: var(--primary); font-size: 18px; }
+  .stat-val.navy  { color: var(--sapphire-dark); }
 
   /* ── Savings rate ── */
   .rate-card {
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    box-shadow: var(--shadow-sm);
   }
   .rate-header {
     display: flex;
@@ -339,13 +337,13 @@
     padding: 2px 8px;
     border-radius: 20px;
   }
-  .rate-pct.good { background: #dcfce7; color: #16a34a; }
-  .rate-pct.ok   { background: #fef3c7; color: #d97706; }
-  .rate-pct.bad  { background: #fee2e2; color: #dc2626; }
+  .rate-pct.good { background: var(--success-light); color: var(--success); }
+  .rate-pct.ok   { background: var(--pumpkin-light); color: var(--pumpkin); }
+  .rate-pct.bad  { background: var(--danger-light);  color: var(--danger);  }
 
   .rate-bar-wrap {
     height: 10px;
-    background: #f0f0f0;
+    background: var(--border);
     border-radius: 5px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -355,9 +353,9 @@
     border-radius: 5px;
     transition: width 0.6s ease;
   }
-  .rate-bar.good { background: linear-gradient(90deg, #16a34a, #22c55e); }
-  .rate-bar.ok   { background: linear-gradient(90deg, #d97706, #f59e0b); }
-  .rate-bar.bad  { background: linear-gradient(90deg, #dc2626, #ef4444); }
+  .rate-bar.good { background: linear-gradient(90deg, var(--success), #22c55e); }
+  .rate-bar.ok   { background: linear-gradient(90deg, var(--pumpkin), #f59e0b); }
+  .rate-bar.bad  { background: linear-gradient(90deg, var(--danger),  #ef4444); }
 
   .rate-caption {
     font-size: 12px;
@@ -367,11 +365,12 @@
   /* ── Chart ── */
   .chart-card {
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    box-shadow: var(--shadow-sm);
   }
   .chart-title {
+    font-family: var(--font-heading);
     font-size: 13px;
     font-weight: 700;
     color: var(--text);
@@ -398,20 +397,21 @@
   .chart-bar-wrap {
     flex: 1;
     height: 22px;
-    background: #f4f4f4;
-    border-radius: 4px;
+    background: var(--surface-2);
+    border-radius: var(--radius-xs);
     overflow: hidden;
   }
   .chart-bar {
     height: 100%;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     transition: width 0.5s ease;
     min-width: 4px;
   }
-  .chart-bar.pos { background: linear-gradient(90deg, #2075D0, #4fa0f0); }
-  .chart-bar.neg { background: linear-gradient(90deg, #dc2626, #f87171); }
+  .chart-bar.pos { background: linear-gradient(90deg, var(--primary), #4fa0f0); }
+  .chart-bar.neg { background: linear-gradient(90deg, var(--danger),  #f87171); }
 
   .chart-amount {
+    font-family: var(--font-heading);
     font-size: 11px;
     font-weight: 700;
     width: 70px;
@@ -419,8 +419,8 @@
     text-align: right;
     white-space: nowrap;
   }
-  .chart-amount.pos { color: #2075D0; }
-  .chart-amount.neg { color: #dc2626; }
+  .chart-amount.pos { color: var(--primary); }
+  .chart-amount.neg { color: var(--danger);  }
 
   .chart-legend {
     display: flex;
@@ -436,8 +436,8 @@
     display: inline-block;
     flex-shrink: 0;
   }
-  .legend-dot.pos { background: #2075D0; }
-  .legend-dot.neg { background: #dc2626; }
+  .legend-dot.pos { background: var(--primary); }
+  .legend-dot.neg { background: var(--danger);  }
 
   /* ── Empty ── */
   .empty-state {
@@ -447,6 +447,7 @@
   }
   .empty-icon { display: flex; justify-content: center; margin-bottom: 16px; }
   .empty-title {
+    font-family: var(--font-heading);
     font-size: 16px;
     font-weight: 700;
     color: var(--text);

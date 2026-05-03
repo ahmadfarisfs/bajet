@@ -26,5 +26,5 @@ func Init(path string) error {
 	if err != nil {
 		return err
 	}
-	return DB.AutoMigrate(&models.Cycle{}, &models.Period{})
+	return DB.AutoMigrate(&models.Cycle{}, &models.Period{}, &models.Waitlist{})
 }
