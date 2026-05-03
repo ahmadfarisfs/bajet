@@ -3,18 +3,21 @@
   import { fmtDate, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
   import PeriodCard from './PeriodCard.svelte'
 
-  let { cycleId, onBack } = $props()
+  let { cycleId, onBack, initialCycle = null } = $props()
 
-  let cycle = $state(null)
-  let loading = $state(true)
+  // Seed with the pre-loaded cycle from parent for instant display; refresh in background
+  let cycle = $state(initialCycle ?? null)
+  let loading = $state(initialCycle == null)
   let error = $state('')
 
   async function load() {
-    loading = true; error = ''
+    // Don't blank the screen if we already have data — refresh silently
+    if (!cycle) loading = true
+    error = ''
     try {
       cycle = await api.getCycle(cycleId)
     } catch (e) {
-      error = e.message
+      if (!cycle) error = e.message
     } finally {
       loading = false
     }
@@ -42,11 +45,15 @@
 <div class="view">
   <div class="topbar">
     <button class="back" onclick={onBack}>← Kembali</button>
-    <button class="del-btn" onclick={deleteCycle} title="Hapus cycle">🗑</button>
+    <button class="del-btn" onclick={deleteCycle} title="Hapus cycle">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+    </button>
   </div>
 
   {#if loading}
-    <div class="center">Memuat...</div>
+    <div class="center"><span class="spinner"></span></div>
   {:else if error}
     <div class="center err">{error}</div>
   {:else if cycle}
@@ -108,8 +115,7 @@
   .view {
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px;
-    padding-bottom: 48px;
+    padding: 16px 16px 48px;
   }
   .topbar {
     display: flex;
@@ -126,12 +132,14 @@
     padding: 6px 0;
   }
   .del-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
-    font-size: 18px;
-    padding: 6px;
+    width: 34px; height: 34px;
     border-radius: var(--radius-xs);
     color: var(--text-muted);
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
   }
   .del-btn:hover { background: var(--danger-light); color: var(--danger); }
 
@@ -178,14 +186,11 @@
   }
   .progress-bar {
     height: 100%;
-    background: var(--primary);
+    background: linear-gradient(90deg, var(--sapphire-dark), var(--primary));
     border-radius: 3px;
     transition: width 0.4s ease;
   }
-  .progress-text {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
+  .progress-text { font-size: 12px; color: var(--text-muted); }
 
   .active-period-banner {
     display: flex;
@@ -199,22 +204,18 @@
   }
   .ap-left { display: flex; flex-direction: column; gap: 1px; }
   .ap-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
     color: var(--pumpkin);
   }
   .ap-name {
     font-family: var(--font-heading);
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 18px; font-weight: 800;
     color: var(--pumpkin);
   }
   .ap-countdown {
     font-family: var(--font-heading);
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 15px; font-weight: 700;
     color: var(--pumpkin);
   }
   .ap-countdown.urgent { color: var(--danger); }
@@ -235,34 +236,32 @@
   .summary-card.red   { background: var(--danger-light);  }
 
   .s-label {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 11px; font-weight: 700;
     color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    text-transform: uppercase; letter-spacing: 0.5px;
     margin-bottom: 4px;
   }
   .summary-card.green .s-label { color: var(--success); }
   .summary-card.red   .s-label { color: var(--danger);  }
-
   .s-val {
     font-family: var(--font-heading);
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 15px; font-weight: 700;
     color: var(--text);
   }
   .summary-card.green .s-val { color: var(--success); }
   .summary-card.red   .s-val { color: var(--danger);  }
 
-  .periods {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .periods { display: flex; flex-direction: column; gap: 10px; }
+
+  .center { text-align: center; padding: 40px; color: var(--text-muted); }
+  .spinner {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--sapphire-dark);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
   }
-  .center {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-muted);
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .err { color: var(--danger); }
 </style>

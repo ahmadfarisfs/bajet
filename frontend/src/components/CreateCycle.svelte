@@ -95,15 +95,13 @@
   .view {
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px;
-    padding-bottom: 48px;
+    padding: 16px 16px 48px;
   }
   .topbar { margin-bottom: 20px; }
   .back {
     background: none;
     font-family: var(--font-heading);
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 14px; font-weight: 700;
     color: var(--primary);
     padding: 6px 0;
   }
@@ -120,16 +118,14 @@
   }
   h2 {
     font-family: var(--font-heading);
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 20px; font-weight: 800;
   }
 
   label {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 13px; font-weight: 600;
     color: var(--text-muted);
   }
   label input[type="date"],
@@ -160,8 +156,7 @@
   .prefix {
     padding: 0 12px;
     color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 13px; font-weight: 600;
     border-right: 1.5px solid var(--border);
     background: var(--surface-2);
     height: 44px;
@@ -174,8 +169,7 @@
     padding: 0 12px;
     height: 44px;
     font-family: var(--font-heading);
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 15px; font-weight: 700;
     color: var(--text);
     background: transparent;
     outline: none;
@@ -199,8 +193,12 @@
     gap: 2px;
     transition: all 0.15s;
   }
-  .toggle-btn strong { font-size: 13px; color: var(--text); font-family: var(--font-heading); }
-  .toggle-btn small  { font-size: 11px; }
+  .toggle-btn strong {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    color: var(--text);
+  }
+  .toggle-btn small { font-size: 11px; }
   .toggle-btn.active {
     background: var(--banana-light);
     border-color: var(--banana-dark);
@@ -215,8 +213,7 @@
     padding: 14px;
     border-radius: var(--radius-sm);
     font-family: var(--font-heading);
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 15px; font-weight: 800;
     background: var(--sapphire-dark);
     color: var(--banana);
     letter-spacing: 0.2px;

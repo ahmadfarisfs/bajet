@@ -1,7 +1,7 @@
 <script>
   import { fmtShort, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
 
-  let { cycles, onSelect, onNew } = $props()
+  let { cycles, loading = false, onSelect, onNew } = $props()
 
   function summary(cycle) { return cycleSummary(cycle.periods ?? []) }
   function completedCount(cycle) { return (cycle.periods ?? []).filter(p => p.status === 'completed').length }
@@ -16,19 +16,23 @@
   </div>
 
   {#if cycles.length === 0}
-    <div class="empty">
-      <div class="empty-icon">
-        <svg width="52" height="52" viewBox="0 0 512 512" fill="none">
-          <rect width="512" height="512" rx="110" fill="#154374"/>
-          <rect x="88"  y="210" width="96" height="215" rx="16" fill="#F2E942" opacity="0.55"/>
-          <rect x="208" y="118" width="96" height="307" rx="16" fill="#F2E942"/>
-          <rect x="328" y="158" width="96" height="267" rx="16" fill="#F2E942" opacity="0.80"/>
-          <rect x="68"  y="430" width="376" height="10"  rx="5"  fill="#F2E942" opacity="0.35"/>
-        </svg>
+    {#if loading}
+      <div class="empty"><span class="spinner"></span></div>
+    {:else}
+      <div class="empty">
+        <div class="empty-icon">
+          <svg width="52" height="52" viewBox="0 0 512 512" fill="none">
+            <rect width="512" height="512" rx="110" fill="#154374"/>
+            <rect x="88"  y="210" width="96" height="215" rx="16" fill="#F2E942" opacity="0.55"/>
+            <rect x="208" y="118" width="96" height="307" rx="16" fill="#F2E942"/>
+            <rect x="328" y="158" width="96" height="267" rx="16" fill="#F2E942" opacity="0.80"/>
+            <rect x="68"  y="430" width="376" height="10"  rx="5"  fill="#F2E942" opacity="0.35"/>
+          </svg>
+        </div>
+        <p>Belum ada cycle.</p>
+        <button class="btn-start" onclick={onNew}>Buat Cycle Pertama</button>
       </div>
-      <p>Belum ada cycle.</p>
-      <button class="btn-start" onclick={onNew}>Buat Cycle Pertama</button>
-    </div>
+    {/if}
   {:else}
     {#each cycles as cycle (cycle.id)}
       {@const s = summary(cycle)}
@@ -82,10 +86,9 @@
 
 <style>
   .list {
-    padding: 20px 16px;
+    padding: 20px 16px 80px;
     max-width: 480px;
     margin: 0 auto;
-    padding-bottom: 48px;
   }
   .list-header {
     display: flex;
@@ -108,7 +111,6 @@
     font-weight: 700;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
-    letter-spacing: 0.2px;
     transition: background 0.15s;
   }
   .btn-new:hover { background: var(--primary); color: white; }
@@ -217,8 +219,19 @@
     padding: 60px 20px;
     color: var(--text-muted);
   }
-  .empty-icon { margin-bottom: 20px; display: flex; justify-content: center; }
+  .empty-icon { display: flex; justify-content: center; margin-bottom: 20px; }
   .empty p { margin-bottom: 20px; font-size: 15px; font-weight: 500; }
+
+  .spinner {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--sapphire-dark);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .btn-start {
     background: var(--sapphire-dark);
     color: var(--banana);

@@ -4,16 +4,24 @@
 
   let { period, onUpdate } = $props()
 
+  // Local copy for optimistic rendering — updated instantly, synced from prop when idle
+  let local = $state({ ...period })
+  let inflight = $state(false)
+
+  // Sync from parent when not mid-operation (background refresh arrives)
+  $effect(() => {
+    if (!inflight) local = { ...period }
+  })
+
   let showForm = $state(false)
   let resultType = $state('sisa')
   let amount = $state('')
-  let loading = $state(false)
   let error = $state('')
 
-  let isCurrent  = $derived(period.status === 'open' && isActive(period.start_date, period.end_date))
-  let isFuture   = $derived(period.status === 'open' && daysUntil(period.start_date) > 0)
-  let remaining  = $derived(daysLeft(period.end_date))
-  let startsIn   = $derived(daysUntil(period.start_date))
+  let isCurrent = $derived(local.status === 'open' && isActive(local.start_date, local.end_date))
+  let isFuture  = $derived(local.status === 'open' && daysUntil(local.start_date) > 0)
+  let remaining = $derived(daysLeft(local.end_date))
+  let startsIn  = $derived(daysUntil(local.start_date))
 
   function countdownLabel(n) {
     if (n <= 0) return 'Hari ini terakhir!'
@@ -23,58 +31,72 @@
   async function submit() {
     const val = parseFloat(amount)
     if (isNaN(val) || val < 0) { error = 'Masukkan jumlah yang valid'; return }
-    loading = true; error = ''
+
+    const prev = { ...local }
+    inflight = true
+    // Optimistic: show result immediately
+    local = { ...local, status: 'completed', result_type: resultType, result_amount: val }
+    showForm = false; amount = ''; error = ''
+
     try {
       await api.checkIn(period.id, { result_type: resultType, result_amount: val })
-      showForm = false; amount = ''
-      onUpdate()
+      onUpdate() // background sync — no await
     } catch (e) {
+      local = prev
+      showForm = true
       error = e.message
     } finally {
-      loading = false
+      inflight = false
     }
   }
 
   async function undo() {
     if (!confirm('Batalkan check-in ini?')) return
-    loading = true
+
+    const prev = { ...local }
+    inflight = true
+    // Optimistic: revert to open immediately
+    local = { ...local, status: 'open', result_type: '', result_amount: 0 }
+
     try {
       await api.undoCheckIn(period.id)
       onUpdate()
     } catch (e) {
+      local = prev
       alert(e.message)
     } finally {
-      loading = false
+      inflight = false
     }
   }
 </script>
 
 <div
   class="card"
-  class:completed={period.status === 'completed'}
+  class:completed={local.status === 'completed'}
   class:current={isCurrent}
-  class:open={period.status === 'open' && !isCurrent}
+  class:open={local.status === 'open' && !isCurrent}
+  class:saving={inflight}
 >
   <div class="header">
     <div class="label">
       <span class="badge" class:badge-current={isCurrent} class:badge-future={isFuture && !isCurrent}>
-        P{period.period_number}
+        P{local.period_number}
       </span>
-      <span class="dates">{fmtShort(period.start_date)} – {fmtShort(period.end_date)}</span>
+      <span class="dates">{fmtShort(local.start_date)} – {fmtShort(local.end_date)}</span>
       {#if isCurrent}
         <span class="countdown" class:urgent={remaining <= 1}>{countdownLabel(remaining)}</span>
-      {:else if isFuture && period.status === 'open'}
+      {:else if isFuture && local.status === 'open'}
         <span class="upcoming">mulai {startsIn}h lagi</span>
       {/if}
     </div>
-    <div class="budget">Rp {fmtIDR(period.budget)}</div>
+    <div class="budget">Rp {fmtIDR(local.budget)}</div>
   </div>
 
-  {#if period.status === 'completed'}
-    <div class="result" class:sisa={period.result_type === 'sisa'} class:defisit={period.result_type === 'defisit'}>
-      <span class="result-type">{period.result_type === 'sisa' ? '✓ Sisa' : '✗ Defisit'}</span>
-      <span class="result-amount">Rp {fmtIDR(period.result_amount)}</span>
-      <button class="undo-btn" onclick={undo} disabled={loading}>Batal</button>
+  {#if local.status === 'completed'}
+    <div class="result" class:sisa={local.result_type === 'sisa'} class:defisit={local.result_type === 'defisit'}>
+      <span class="result-type">{local.result_type === 'sisa' ? '✓ Sisa' : '✗ Defisit'}</span>
+      <span class="result-amount">Rp {fmtIDR(local.result_amount)}</span>
+      <button class="undo-btn" onclick={undo} disabled={inflight}>Batal</button>
     </div>
   {:else}
     {#if showForm}
@@ -104,9 +126,7 @@
         {#if error}<p class="err">{error}</p>{/if}
         <div class="actions">
           <button class="btn-cancel" onclick={() => { showForm = false; error = '' }}>Batal</button>
-          <button class="btn-submit" onclick={submit} disabled={loading}>
-            {loading ? '...' : 'Simpan'}
-          </button>
+          <button class="btn-submit" onclick={submit} disabled={inflight}>Simpan</button>
         </div>
       </div>
     {:else}
@@ -124,10 +144,12 @@
     padding: 14px 16px;
     border-left: 4px solid var(--border);
     transition: border-color 0.2s;
+    box-shadow: var(--shadow-sm);
   }
-  .card.open     { border-left-color: var(--primary); }
-  .card.current  { border-left-color: var(--pumpkin); background: #fffaf5; }
+  .card.open      { border-left-color: var(--primary); }
+  .card.current   { border-left-color: var(--pumpkin); background: #fffaf5; }
   .card.completed { border-left-color: var(--border); }
+  .card.saving    { opacity: 0.85; }
 
   .header {
     display: flex;
@@ -147,50 +169,31 @@
     background: var(--sapphire-light);
     color: var(--primary);
     font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 12px; font-weight: 700;
     padding: 2px 8px;
     border-radius: 20px;
     flex-shrink: 0;
   }
-  .badge-current {
-    background: var(--pumpkin);
-    color: white;
-  }
-  .badge-future {
-    background: var(--border);
-    color: var(--text-muted);
-  }
-  .dates {
-    font-size: 13px;
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
+  .badge-current { background: var(--pumpkin); color: white; }
+  .badge-future  { background: var(--border);  color: var(--text-muted); }
+
+  .dates { font-size: 13px; color: var(--text-muted); flex-shrink: 0; }
 
   .countdown {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 11px; font-weight: 700;
     padding: 2px 7px;
     border-radius: 20px;
     background: var(--pumpkin-light);
     color: var(--pumpkin);
     flex-shrink: 0;
   }
-  .countdown.urgent {
-    background: var(--danger-light);
-    color: var(--danger);
-  }
+  .countdown.urgent { background: var(--danger-light); color: var(--danger); }
 
-  .upcoming {
-    font-size: 11px;
-    color: var(--text-light);
-    flex-shrink: 0;
-  }
+  .upcoming { font-size: 11px; color: var(--text-light); flex-shrink: 0; }
 
   .budget {
     font-family: var(--font-heading);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 13px; font-weight: 700;
     color: var(--text);
     flex-shrink: 0;
   }
@@ -206,7 +209,6 @@
   }
   .result.sisa    { background: var(--success-light); color: var(--success); }
   .result.defisit { background: var(--danger-light);  color: var(--danger);  }
-
   .result-type   { font-weight: 600; }
   .result-amount { font-family: var(--font-heading); font-weight: 700; flex: 1; }
   .undo-btn {
@@ -226,8 +228,8 @@
     flex: 1;
     padding: 8px;
     border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 700;
+    font-family: var(--font-heading);
+    font-size: 13px; font-weight: 700;
     background: var(--surface-2);
     color: var(--text-muted);
     border: 2px solid transparent;
@@ -251,12 +253,13 @@
     border-radius: var(--radius-sm);
     overflow: hidden;
     background: var(--surface);
+    transition: border-color 0.15s;
   }
+  .input-row:focus-within { border-color: var(--primary); }
   .prefix {
     padding: 0 12px;
     color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 13px; font-weight: 600;
     border-right: 1.5px solid var(--border);
     background: var(--surface-2);
     height: 40px;
@@ -269,8 +272,7 @@
     padding: 0 12px;
     height: 40px;
     font-family: var(--font-heading);
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 15px; font-weight: 700;
     color: var(--text);
     background: transparent;
     outline: none;
@@ -282,8 +284,7 @@
     flex: 1;
     padding: 10px;
     border-radius: var(--radius-sm);
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 14px; font-weight: 600;
     background: var(--surface-2);
     color: var(--text-muted);
     transition: background 0.15s;
@@ -294,8 +295,7 @@
     padding: 10px;
     border-radius: var(--radius-sm);
     font-family: var(--font-heading);
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 14px; font-weight: 800;
     background: var(--sapphire-dark);
     color: var(--banana);
     transition: background 0.15s;
@@ -309,8 +309,7 @@
     padding: 9px;
     border-radius: var(--radius-sm);
     font-family: var(--font-heading);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 13px; font-weight: 700;
     background: var(--sapphire-light);
     color: var(--primary);
     transition: background 0.15s;

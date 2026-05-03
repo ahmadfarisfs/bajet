@@ -29,10 +29,17 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
 	}))
 	e.Use(middleware.Recover())
 
+	// Waitlist — no auth required
+	e.POST("/api/waitlist", handlers.JoinWaitlist)
+	e.GET("/api/waitlist/count", handlers.WaitlistCount)
+	e.GET("/admin/waitlist-entries", handlers.AdminWaitlist)
+
 	api := e.Group("/api")
+	api.Use(handlers.AuthMiddleware)
 	api.GET("/cycles", handlers.GetCycles)
 	api.POST("/cycles", handlers.CreateCycle)
 	api.GET("/cycles/:id", handlers.GetCycle)
@@ -40,7 +47,10 @@ func main() {
 	api.POST("/periods/:id/checkin", handlers.CheckIn)
 	api.DELETE("/periods/:id/checkin", handlers.UndoCheckIn)
 
-	// Serve frontend static files in production
+	// Root serves the landing page; everything else falls through to the Svelte SPA
+	e.GET("/", func(c echo.Context) error {
+		return c.File("../frontend/dist/landing.html")
+	})
 	e.Static("/", "../frontend/dist")
 	e.File("/*", "../frontend/dist/index.html")
 
