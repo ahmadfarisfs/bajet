@@ -1,0 +1,196 @@
+import { writable, derived } from 'svelte/store'
+
+const stored = (() => { try { return localStorage.getItem('bajet_lang') } catch { return null } })()
+const browser = (() => { try { return navigator.language } catch { return 'id' } })()
+const defaultLang = stored || (browser.startsWith('id') ? 'id' : 'en')
+
+export const lang = writable(defaultLang)
+lang.subscribe(l => { try { localStorage.setItem('bajet_lang', l) } catch {} })
+
+const s = {
+  en: {
+    // App shell
+    signOut:       'Sign out',
+    cannotConnect: 'Cannot connect to server.',
+    tryAgain:      'Try again',
+    cyclesTab:     'Cycles',
+    overviewTab:   'Overview',
+
+    // Cycle list
+    myCycles:    'My Cycles',
+    newBtn:      '+ New',
+    noCycles:    'No cycles yet.',
+    createFirst: 'Create First Cycle',
+    budgetLabel: 'Budget',
+    periods:     'periods',
+    active:      'ACTIVE',
+    running:     (n) => `P${n} running`,
+    daysLeft:    (n) => n <= 0 ? 'Last day!' : `${n} days left`,
+
+    // Create cycle
+    backCancel:    '← Cancel',
+    newCycle:      'New Cycle',
+    startDate:     'Start Date',
+    endDate:       'End Date',
+    totalBudget:   'Total Budget (IDR)',
+    numPeriods:    'Number of Periods',
+    divMode:       'Division Mode',
+    modeEqual:     'Equal',
+    modeEqualSub:  'Even split',
+    modeBehav:     'Behavioral',
+    modeBehavSub:  'Front-heavy',
+    modeMenurun:   'Decreasing',
+    modeMenurunSub:'Budget decreases',
+    modeProgresif: 'Progressive',
+    modeProgrSub:  'Budget increases',
+    previewLabel:  'Period Preview',
+    previewDate:   'Date',
+    previewDays:   'Days',
+    previewBudget: 'Budget',
+    errDates:      'Dates are required',
+    errBudget:     'Budget must be greater than 0',
+    creating:      'Creating…',
+    createCycle:   'Create Cycle',
+    cycleHint:     (n) => `Cycle will be split into <strong>${n} periods</strong> based on the date range.`,
+
+    // Period card
+    notStarted:   'Not started yet',
+    lastDay:      'Last day!',
+    daysLeftN:    (n) => `${n} days left`,
+    startsIn:     (n) => `starts in ${n}d`,
+    surplus:      'Surplus',
+    deficit:      'Deficit',
+    surplusLabel: '✓ Surplus',
+    deficitLabel: '✗ Deficit',
+    undoBtn:      'Undo',
+    undoConfirm:  'Undo this check-in?',
+    invalidAmt:   'Enter a valid amount',
+    cancel:       'Cancel',
+    save:         'Save',
+    checkIn:      '+ Check-in',
+
+    // Cycle detail
+    back:          '← Back',
+    deleteConfirm: 'Delete this cycle and all its data?',
+    periodsDone:   (c, t) => `${c}/${t} periods done`,
+    activePeriod:  'Active period',
+    totalSurplus:  'Total Surplus',
+    totalDeficit:  'Total Deficit',
+    net:           'Net',
+    spent:         'Spent',
+
+    // Overview
+    heroSaved:     '🎉 Total saved',
+    heroBalance:   '📊 Net balance',
+    fromCycles:    (c, p) => `from ${c} cycles · ${p} periods done`,
+    streak:        (n) => `🔥 ${n} consecutive surplus periods`,
+    statSurplus:   'Total Surplus',
+    statDeficit:   'Total Deficit',
+    savingsRate:   'Savings Rate',
+    budgetMgd:     'Budget Managed',
+    consistency:   'Savings Consistency',
+    perCount:      (s, t) => `${s}/${t} periods`,
+    msgGood:       'Great discipline! Keep it up.',
+    msgOk:         'Not bad! Room to improve.',
+    msgBad:        'Try to save more next period.',
+    historyTitle:  'Per-Cycle History',
+    legendSurplus: 'Surplus',
+    legendDeficit: 'Deficit',
+    noData:        'No data yet',
+    noDataSub:     'Complete at least one period to see your summary here.',
+  },
+
+  id: {
+    // App shell
+    signOut:       'Keluar',
+    cannotConnect: 'Tidak dapat terhubung ke server.',
+    tryAgain:      'Coba lagi',
+    cyclesTab:     'Cycle',
+    overviewTab:   'Overview',
+
+    // Cycle list
+    myCycles:    'Cycle Saya',
+    newBtn:      '+ Baru',
+    noCycles:    'Belum ada cycle.',
+    createFirst: 'Buat Cycle Pertama',
+    budgetLabel: 'Budget',
+    periods:     'periode',
+    active:      'AKTIF',
+    running:     (n) => `P${n} sedang berjalan`,
+    daysLeft:    (n) => n <= 0 ? 'Hari ini terakhir!' : `${n} hari lagi`,
+
+    // Create cycle
+    backCancel:    '← Batal',
+    newCycle:      'Buat Cycle Baru',
+    startDate:     'Tanggal Mulai',
+    endDate:       'Tanggal Selesai',
+    totalBudget:   'Total Budget (IDR)',
+    numPeriods:    'Jumlah Periode',
+    divMode:       'Mode Pembagian',
+    modeEqual:     'Equal',
+    modeEqualSub:  'Merata',
+    modeBehav:     'Behavioral',
+    modeBehavSub:  'Awal panjang',
+    modeMenurun:   'Menurun',
+    modeMenurunSub:'Budget turun',
+    modeProgresif: 'Progresif',
+    modeProgrSub:  'Budget naik',
+    previewLabel:  'Preview Periode',
+    previewDate:   'Tanggal',
+    previewDays:   'Hari',
+    previewBudget: 'Budget',
+    errDates:      'Tanggal harus diisi',
+    errBudget:     'Budget harus lebih dari 0',
+    creating:      'Membuat…',
+    createCycle:   'Buat Cycle',
+    cycleHint:     (n) => `Cycle akan dibagi menjadi <strong>${n} periode</strong> berdasarkan rentang tanggal.`,
+
+    // Period card
+    notStarted:   'Belum dimulai',
+    lastDay:      'Hari ini terakhir!',
+    daysLeftN:    (n) => `${n} hari lagi`,
+    startsIn:     (n) => `mulai ${n}h lagi`,
+    surplus:      'Sisa',
+    deficit:      'Defisit',
+    surplusLabel: '✓ Sisa',
+    deficitLabel: '✗ Defisit',
+    undoBtn:      'Batal',
+    undoConfirm:  'Batalkan check-in ini?',
+    invalidAmt:   'Masukkan jumlah yang valid',
+    cancel:       'Batal',
+    save:         'Simpan',
+    checkIn:      '+ Check-in',
+
+    // Cycle detail
+    back:          '← Kembali',
+    deleteConfirm: 'Hapus cycle ini beserta semua datanya?',
+    periodsDone:   (c, t) => `${c}/${t} periode selesai`,
+    activePeriod:  'Periode aktif',
+    totalSurplus:  'Total Sisa',
+    totalDeficit:  'Total Defisit',
+    net:           'Net',
+    spent:         'Terpakai',
+
+    // Overview
+    heroSaved:     '🎉 Total kamu hemat',
+    heroBalance:   '📊 Total selisih',
+    fromCycles:    (c, p) => `dari ${c} cycle · ${p} periode selesai`,
+    streak:        (n) => `🔥 ${n} periode hemat berturut-turut`,
+    statSurplus:   'Total Sisa',
+    statDeficit:   'Total Defisit',
+    savingsRate:   'Hemat Rate',
+    budgetMgd:     'Budget Dikelola',
+    consistency:   'Konsistensi Hemat',
+    perCount:      (s, t) => `${s}/${t} periode`,
+    msgGood:       'Kamu disiplin banget! Terus pertahankan.',
+    msgOk:         'Lumayan! Masih bisa ditingkatkan.',
+    msgBad:        'Yuk usaha lebih hemat di periode berikutnya.',
+    historyTitle:  'Riwayat per Cycle',
+    legendSurplus: 'Hemat (sisa)',
+    legendDeficit: 'Kurang (defisit)',
+    noData:        'Belum ada data',
+    noDataSub:     'Selesaikan minimal satu periode untuk melihat ringkasan di sini.',
+  },
+}
+
+export const i18n = derived(lang, $l => s[$l] ?? s.id)

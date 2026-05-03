@@ -1,69 +1,54 @@
 <script>
   import { fmtShort, fmtIDR, isActive, daysLeft, daysUntil } from '../lib/utils.js'
   import { api } from '../lib/api.js'
+  import { i18n } from '../lib/i18n.js'
 
   let { period, onUpdate } = $props()
 
-  // Local copy for optimistic rendering — updated instantly, synced from prop when idle
-  let local = $state({ ...period })
+  let local    = $state({ ...period })
   let inflight = $state(false)
 
-  // Sync from parent when not mid-operation (background refresh arrives)
-  $effect(() => {
-    if (!inflight) local = { ...period }
-  })
+  $effect(() => { if (!inflight) local = { ...period } })
 
-  let showForm = $state(false)
+  let showForm   = $state(false)
   let resultType = $state('sisa')
-  let amount = $state('')
-  let error = $state('')
+  let amount     = $state('')
+  let error      = $state('')
 
   let isCurrent = $derived(local.status === 'open' && isActive(local.start_date, local.end_date))
   let isFuture  = $derived(local.status === 'open' && daysUntil(local.start_date) > 0)
   let remaining = $derived(daysLeft(local.end_date))
   let startsIn  = $derived(daysUntil(local.start_date))
 
-  function countdownLabel(n) {
-    if (n <= 0) return 'Hari ini terakhir!'
-    return `${n} hari lagi`
-  }
-
   async function submit() {
     const val = parseFloat(amount)
-    if (isNaN(val) || val < 0) { error = 'Masukkan jumlah yang valid'; return }
+    if (isNaN(val) || val < 0) { error = $i18n.invalidAmt; return }
 
     const prev = { ...local }
     inflight = true
-    // Optimistic: show result immediately
     local = { ...local, status: 'completed', result_type: resultType, result_amount: val }
     showForm = false; amount = ''; error = ''
 
     try {
       await api.checkIn(period.id, { result_type: resultType, result_amount: val })
-      onUpdate() // background sync — no await
+      onUpdate()
     } catch (e) {
-      local = prev
-      showForm = true
-      error = e.message
+      local = prev; showForm = true; error = e.message
     } finally {
       inflight = false
     }
   }
 
   async function undo() {
-    if (!confirm('Batalkan check-in ini?')) return
-
+    if (!confirm($i18n.undoConfirm)) return
     const prev = { ...local }
     inflight = true
-    // Optimistic: revert to open immediately
     local = { ...local, status: 'open', result_type: '', result_amount: 0 }
-
     try {
       await api.undoCheckIn(period.id)
       onUpdate()
     } catch (e) {
-      local = prev
-      alert(e.message)
+      local = prev; alert(e.message)
     } finally {
       inflight = false
     }
@@ -79,14 +64,16 @@
 >
   <div class="header">
     <div class="label">
-      <span class="badge" class:badge-current={isCurrent} class:badge-future={isFuture && !isCurrent}>
+      <span class="badge" class:badge-current={isCurrent} class:badge-future={isFuture}>
         P{local.period_number}
       </span>
       <span class="dates">{fmtShort(local.start_date)} – {fmtShort(local.end_date)}</span>
       {#if isCurrent}
-        <span class="countdown" class:urgent={remaining <= 1}>{countdownLabel(remaining)}</span>
-      {:else if isFuture && local.status === 'open'}
-        <span class="upcoming">mulai {startsIn}h lagi</span>
+        <span class="countdown" class:urgent={remaining <= 1}>
+          {remaining <= 0 ? $i18n.lastDay : $i18n.daysLeftN(remaining)}
+        </span>
+      {:else if isFuture}
+        <span class="upcoming">{$i18n.startsIn(startsIn)}</span>
       {/if}
     </div>
     <div class="budget">Rp {fmtIDR(local.budget)}</div>
@@ -94,44 +81,37 @@
 
   {#if local.status === 'completed'}
     <div class="result" class:sisa={local.result_type === 'sisa'} class:defisit={local.result_type === 'defisit'}>
-      <span class="result-type">{local.result_type === 'sisa' ? '✓ Sisa' : '✗ Defisit'}</span>
+      <span class="result-type">{local.result_type === 'sisa' ? $i18n.surplusLabel : $i18n.deficitLabel}</span>
       <span class="result-amount">Rp {fmtIDR(local.result_amount)}</span>
-      <button class="undo-btn" onclick={undo} disabled={inflight}>Batal</button>
+      <button class="undo-btn" onclick={undo} disabled={inflight}>{$i18n.undoBtn}</button>
     </div>
+  {:else if isFuture}
+    <div class="not-started">{$i18n.notStarted}</div>
   {:else}
     {#if showForm}
       <div class="form">
         <div class="toggle">
-          <button
-            class="toggle-btn"
-            class:active={resultType === 'sisa'}
-            onclick={() => resultType = 'sisa'}
-          >Sisa</button>
-          <button
-            class="toggle-btn defisit"
-            class:active={resultType === 'defisit'}
-            onclick={() => resultType = 'defisit'}
-          >Defisit</button>
+          <button class="toggle-btn" class:active={resultType === 'sisa'} onclick={() => resultType = 'sisa'}>
+            {$i18n.surplus}
+          </button>
+          <button class="toggle-btn defisit" class:active={resultType === 'defisit'} onclick={() => resultType = 'defisit'}>
+            {$i18n.deficit}
+          </button>
         </div>
         <div class="input-row">
           <span class="prefix">Rp</span>
-          <input
-            type="number"
-            placeholder="0"
-            min="0"
-            bind:value={amount}
-            onkeydown={(e) => e.key === 'Enter' && submit()}
-          />
+          <input type="number" placeholder="0" min="0" bind:value={amount}
+            onkeydown={(e) => e.key === 'Enter' && submit()} />
         </div>
         {#if error}<p class="err">{error}</p>{/if}
         <div class="actions">
-          <button class="btn-cancel" onclick={() => { showForm = false; error = '' }}>Batal</button>
-          <button class="btn-submit" onclick={submit} disabled={inflight}>Simpan</button>
+          <button class="btn-cancel" onclick={() => { showForm = false; error = '' }}>{$i18n.cancel}</button>
+          <button class="btn-submit" onclick={submit} disabled={inflight}>{$i18n.save}</button>
         </div>
       </div>
     {:else}
       <button class="checkin-btn" class:checkin-current={isCurrent} onclick={() => showForm = true}>
-        + Check-in
+        {$i18n.checkIn}
       </button>
     {/if}
   {/if}
@@ -302,6 +282,17 @@
   }
   .btn-submit:hover:not(:disabled) { background: var(--primary); color: white; }
   .btn-submit:disabled { opacity: 0.6; }
+
+  .not-started {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    background: var(--surface-2);
+    text-align: center;
+  }
 
   .checkin-btn {
     width: 100%;

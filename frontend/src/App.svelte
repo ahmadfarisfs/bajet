@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { api } from './lib/api.js'
   import { isSignedIn, signIn, signOut, getUser } from './lib/auth.js'
+  import { i18n, lang } from './lib/i18n.js'
   import CycleList from './components/CycleList.svelte'
   import CycleDetail from './components/CycleDetail.svelte'
   import CreateCycle from './components/CreateCycle.svelte'
@@ -112,8 +113,11 @@
           </svg>
         </button>
       {/if}
+      <button class="lang-toggle" onclick={() => lang.update(l => l === 'id' ? 'en' : 'id')} title="Switch language">
+        {$lang === 'id' ? 'EN' : 'ID'}
+      </button>
       {#if USES_BACKEND && signedIn}
-        <button class="header-user" onclick={handleSignOut} title="Sign out">
+        <button class="header-user" onclick={handleSignOut} title={$i18n.signOut}>
           {#if user?.picture}
             <img src={user.picture} alt={user.name} class="avatar" referrerpolicy="no-referrer" />
           {:else}
@@ -121,7 +125,7 @@
               <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
           {/if}
-          <span>Keluar</span>
+          <span>{$i18n.signOut}</span>
         </button>
       {/if}
     </div>
@@ -146,9 +150,9 @@
     {:else if view === 'list'}
       {#if loadError}
         <div class="api-error">
-          <p>Tidak dapat terhubung ke server.</p>
+          <p>{$i18n.cannotConnect}</p>
           <small>{loadError}</small>
-          <button onclick={loadCycles}>Coba lagi</button>
+          <button onclick={loadCycles}>{$i18n.tryAgain}</button>
         </div>
       {:else}
         <CycleList {cycles} {loading} onSelect={showDetail} onNew={showCreate} />
@@ -171,7 +175,7 @@
           <rect x="3" y="14" width="7" height="7" rx="1"/>
           <rect x="14" y="14" width="7" height="7" rx="1"/>
         </svg>
-        <span>Cycle</span>
+        <span>{$i18n.cyclesTab}</span>
       </button>
       <button class="tab" class:active={view === 'overview'} onclick={showOverview}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -179,7 +183,7 @@
           <line x1="12" y1="20" x2="12" y2="4"/>
           <line x1="6"  y1="20" x2="6"  y2="14"/>
         </svg>
-        <span>Overview</span>
+        <span>{$i18n.overviewTab}</span>
       </button>
     </nav>
   {/if}
@@ -226,6 +230,19 @@
     align-items: center;
     gap: 6px;
   }
+
+  .lang-toggle {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.85);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: var(--radius-xs);
+    letter-spacing: 0.5px;
+    transition: background 0.15s;
+  }
+  .lang-toggle:hover { background: rgba(255,255,255,0.22); }
 
   .header-icon-btn {
     display: flex;

@@ -1,5 +1,6 @@
 <script>
   import { fmtIDR, fmtShort, cycleSummary } from '../lib/utils.js'
+  import { i18n } from '../lib/i18n.js'
 
   let { cycles } = $props()
 
@@ -62,19 +63,17 @@
   <div class="hero" class:hero-positive={stats.net >= 0} class:hero-negative={stats.net < 0}>
     <div class="hero-inner">
       <div class="hero-label">
-        {stats.net >= 0 ? '🎉 Total kamu hemat' : '📊 Total selisih'}
+        {stats.net >= 0 ? $i18n.heroSaved : $i18n.heroBalance}
       </div>
       <div class="hero-amount">
         {stats.net >= 0 ? '' : '-'}Rp {fmtIDR(Math.abs(stats.net))}
       </div>
       <div class="hero-sub">
-        dari {cycles.length} cycle · {stats.periodsCompleted} periode selesai
+        {$i18n.fromCycles(cycles.length, stats.periodsCompleted)}
       </div>
     </div>
     {#if streak >= 2}
-      <div class="streak-badge">
-        🔥 {streak} periode hemat berturut-turut
-      </div>
+      <div class="streak-badge">{$i18n.streak(streak)}</div>
     {/if}
   </div>
 
@@ -83,28 +82,28 @@
     <div class="stat-card">
       <div class="stat-icon green">↑</div>
       <div class="stat-body">
-        <div class="stat-label">Total Sisa</div>
+        <div class="stat-label">{$i18n.statSurplus}</div>
         <div class="stat-val green">Rp {fmtIDR(stats.totalSaved)}</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon red">↓</div>
       <div class="stat-body">
-        <div class="stat-label">Total Defisit</div>
+        <div class="stat-label">{$i18n.statDeficit}</div>
         <div class="stat-val red">Rp {fmtIDR(stats.totalDeficit)}</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon blue">%</div>
       <div class="stat-body">
-        <div class="stat-label">Hemat Rate</div>
+        <div class="stat-label">{$i18n.savingsRate}</div>
         <div class="stat-val blue">{stats.savingsRate}%</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon navy">Σ</div>
       <div class="stat-body">
-        <div class="stat-label">Budget Dikelola</div>
+        <div class="stat-label">{$i18n.budgetMgd}</div>
         <div class="stat-val navy">Rp {fmtIDR(stats.totalBudget)}</div>
       </div>
     </div>
@@ -114,9 +113,9 @@
   {#if stats.periodsCompleted > 0}
     <div class="rate-card">
       <div class="rate-header">
-        <span class="rate-title">Konsistensi Hemat</span>
+        <span class="rate-title">{$i18n.consistency}</span>
         <span class="rate-pct" class:good={stats.savingsRate >= 75} class:ok={stats.savingsRate >= 50 && stats.savingsRate < 75} class:bad={stats.savingsRate < 50}>
-          {stats.sisaCount}/{stats.periodsCompleted} periode
+          {$i18n.perCount(stats.sisaCount, stats.periodsCompleted)}
         </span>
       </div>
       <div class="rate-bar-wrap">
@@ -128,11 +127,11 @@
       </div>
       <div class="rate-caption">
         {#if stats.savingsRate >= 75}
-          Kamu disiplin banget! Terus pertahankan.
+          {$i18n.msgGood}
         {:else if stats.savingsRate >= 50}
-          Lumayan! Masih bisa ditingkatkan.
+          {$i18n.msgOk}
         {:else if stats.savingsRate > 0}
-          Yuk usaha lebih hemat di periode berikutnya.
+          {$i18n.msgBad}
         {/if}
       </div>
     </div>
@@ -141,7 +140,7 @@
   <!-- Per-cycle chart -->
   {#if chartData.length > 0}
     <div class="chart-card">
-      <div class="chart-title">Riwayat per Cycle</div>
+      <div class="chart-title">{$i18n.historyTitle}</div>
       <div class="chart-rows">
         {#each chartData as d}
           {@const pct = Math.abs(d.summary.net) / maxAbs * 100}
@@ -163,8 +162,8 @@
         {/each}
       </div>
       <div class="chart-legend">
-        <span class="legend-dot pos"></span><span>Hemat (sisa)</span>
-        <span class="legend-dot neg"></span><span>Kurang (defisit)</span>
+        <span class="legend-dot pos"></span><span>{$i18n.legendSurplus}</span>
+        <span class="legend-dot neg"></span><span>{$i18n.legendDeficit}</span>
       </div>
     </div>
   {/if}
@@ -181,8 +180,8 @@
           <rect x="68"  y="430" width="376" height="10"  rx="5"  fill="#F2E942" opacity="0.35"/>
         </svg>
       </div>
-      <p class="empty-title">Belum ada data</p>
-      <p class="empty-sub">Selesaikan minimal satu periode untuk melihat ringkasan di sini.</p>
+      <p class="empty-title">{$i18n.noData}</p>
+      <p class="empty-sub">{$i18n.noDataSub}</p>
     </div>
   {/if}
 

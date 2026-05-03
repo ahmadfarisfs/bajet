@@ -1,6 +1,7 @@
 <script>
   import { api } from '../lib/api.js'
   import { todayStr, addDays } from '../lib/utils.js'
+  import { i18n } from '../lib/i18n.js'
 
   let { onCreated, onCancel } = $props()
 
@@ -89,8 +90,8 @@
   }
 
   async function submit() {
-    if (!startDate || !endDate) { error = 'Tanggal harus diisi'; return }
-    if (totalBudget <= 0) { error = 'Budget harus lebih dari 0'; return }
+    if (!startDate || !endDate) { error = $i18n.errDates; return }
+    if (totalBudget <= 0) { error = $i18n.errBudget; return }
     const n = Math.min(Math.max(Math.round(Number(numPeriods)) || 4, 1), 12)
     loading = true; error = ''
     try {
@@ -112,24 +113,24 @@
 
 <div class="view">
   <div class="topbar">
-    <button class="back" onclick={onCancel}>← Batal</button>
+    <button class="back" onclick={onCancel}>{$i18n.backCancel}</button>
   </div>
 
   <div class="card">
-    <h2>Buat Cycle Baru</h2>
+    <h2>{$i18n.newCycle}</h2>
 
     <label>
-      Tanggal Mulai
+      {$i18n.startDate}
       <input type="date" bind:value={startDate} />
     </label>
 
     <label>
-      Tanggal Selesai
+      {$i18n.endDate}
       <input type="date" bind:value={endDate} />
     </label>
 
     <label>
-      Total Budget (IDR)
+      {$i18n.totalBudget}
       <div class="input-row">
         <span class="prefix">Rp</span>
         <input type="number" min="1" bind:value={totalBudget} />
@@ -137,54 +138,38 @@
     </label>
 
     <label>
-      Jumlah Periode
+      {$i18n.numPeriods}
       <input type="number" min="1" max="12" step="1" bind:value={numPeriods} />
     </label>
 
     <div class="field">
-      <span class="field-label">Mode Pembagian</span>
+      <span class="field-label">{$i18n.divMode}</span>
       <div class="toggle">
-        <button
-          class="toggle-btn"
-          class:active={divisionMode === 'equal'}
-          onclick={() => divisionMode = 'equal'}
-        >
-          <strong>Equal</strong>
-          <small>Merata</small>
+        <button class="toggle-btn" class:active={divisionMode === 'equal'} onclick={() => divisionMode = 'equal'}>
+          <strong>{$i18n.modeEqual}</strong>
+          <small>{$i18n.modeEqualSub}</small>
         </button>
-        <button
-          class="toggle-btn"
-          class:active={divisionMode === 'behavioral'}
-          onclick={() => divisionMode = 'behavioral'}
-        >
-          <strong>Behavioral</strong>
-          <small>Awal panjang</small>
+        <button class="toggle-btn" class:active={divisionMode === 'behavioral'} onclick={() => divisionMode = 'behavioral'}>
+          <strong>{$i18n.modeBehav}</strong>
+          <small>{$i18n.modeBehavSub}</small>
         </button>
-        <button
-          class="toggle-btn"
-          class:active={divisionMode === 'menurun'}
-          onclick={() => divisionMode = 'menurun'}
-        >
-          <strong>Menurun</strong>
-          <small>Budget turun</small>
+        <button class="toggle-btn" class:active={divisionMode === 'menurun'} onclick={() => divisionMode = 'menurun'}>
+          <strong>{$i18n.modeMenurun}</strong>
+          <small>{$i18n.modeMenurunSub}</small>
         </button>
-        <button
-          class="toggle-btn"
-          class:active={divisionMode === 'progresif'}
-          onclick={() => divisionMode = 'progresif'}
-        >
-          <strong>Progresif</strong>
-          <small>Budget naik</small>
+        <button class="toggle-btn" class:active={divisionMode === 'progresif'} onclick={() => divisionMode = 'progresif'}>
+          <strong>{$i18n.modeProgresif}</strong>
+          <small>{$i18n.modeProgrSub}</small>
         </button>
       </div>
     </div>
 
     {#if previewPeriods.length > 0}
       <div class="preview">
-        <span class="preview-label">Preview Periode</span>
+        <span class="preview-label">{$i18n.previewLabel}</span>
         <table>
           <thead>
-            <tr><th>#</th><th>Tanggal</th><th>Hari</th><th>Budget</th></tr>
+            <tr><th>#</th><th>{$i18n.previewDate}</th><th>{$i18n.previewDays}</th><th>{$i18n.previewBudget}</th></tr>
           </thead>
           <tbody>
             {#each previewPeriods as p}
@@ -203,13 +188,11 @@
     {#if error}<p class="err">{error}</p>{/if}
 
     <button class="btn-primary" onclick={submit} disabled={loading}>
-      {loading ? 'Membuat...' : 'Buat Cycle'}
+      {loading ? $i18n.creating : $i18n.createCycle}
     </button>
   </div>
 
-  <p class="hint">
-    Cycle akan dibagi menjadi <strong>{numPeriods} periode</strong> berdasarkan rentang tanggal.
-  </p>
+  <p class="hint">{@html $i18n.cycleHint(numPeriods)}</p>
 </div>
 
 <style>

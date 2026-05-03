@@ -2,6 +2,7 @@
   import { api } from '../lib/api.js'
   import { fmtDate, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
   import PeriodCard from './PeriodCard.svelte'
+  import { i18n } from '../lib/i18n.js'
 
   let { cycleId, onBack, initialCycle = null } = $props()
 
@@ -24,7 +25,7 @@
   }
 
   async function deleteCycle() {
-    if (!confirm('Hapus cycle ini beserta semua datanya?')) return
+    if (!confirm($i18n.deleteConfirm)) return
     try {
       await api.deleteCycle(cycleId)
       onBack()
@@ -44,8 +45,8 @@
 
 <div class="view">
   <div class="topbar">
-    <button class="back" onclick={onBack}>← Kembali</button>
-    <button class="del-btn" onclick={deleteCycle} title="Hapus cycle">
+    <button class="back" onclick={onBack}>{$i18n.back}</button>
+    <button class="del-btn" onclick={deleteCycle} title={$i18n.deleteConfirm}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
       </svg>
@@ -66,17 +67,17 @@
       <div class="progress-bar-wrap">
         <div class="progress-bar" style="width: {total ? (completed/total*100) : 0}%"></div>
       </div>
-      <p class="progress-text">{completed}/{total} periode selesai</p>
+      <p class="progress-text">{$i18n.periodsDone(completed, total)}</p>
 
       {#if isCurrent && cp && cp.status === 'open'}
         {@const left = daysLeft(cp.end_date)}
         <div class="active-period-banner">
           <div class="ap-left">
-            <span class="ap-label">Periode aktif</span>
+            <span class="ap-label">{$i18n.activePeriod}</span>
             <span class="ap-name">P{cp.period_number}</span>
           </div>
           <span class="ap-countdown" class:urgent={left <= 1}>
-            {left <= 0 ? 'Hari ini terakhir!' : `${left} hari lagi`}
+            {left <= 0 ? $i18n.lastDay : $i18n.daysLeftN(left)}
           </span>
         </div>
       {/if}
@@ -85,19 +86,19 @@
     {#if summary && completed > 0}
       <div class="summary-grid">
         <div class="summary-card green">
-          <div class="s-label">Total Sisa</div>
+          <div class="s-label">{$i18n.totalSurplus}</div>
           <div class="s-val">Rp {fmtIDR(summary.totalSaved)}</div>
         </div>
         <div class="summary-card red">
-          <div class="s-label">Total Defisit</div>
+          <div class="s-label">{$i18n.totalDeficit}</div>
           <div class="s-val">Rp {fmtIDR(summary.totalDeficit)}</div>
         </div>
         <div class="summary-card" class:green={summary.net >= 0} class:red={summary.net < 0}>
-          <div class="s-label">Net</div>
+          <div class="s-label">{$i18n.net}</div>
           <div class="s-val">{summary.net >= 0 ? '+' : ''}Rp {fmtIDR(Math.abs(summary.net))}</div>
         </div>
         <div class="summary-card">
-          <div class="s-label">Terpakai</div>
+          <div class="s-label">{$i18n.spent}</div>
           <div class="s-val">Rp {fmtIDR(summary.totalSpent)}</div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 <script>
   import { fmtShort, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
+  import { i18n } from '../lib/i18n.js'
 
   let { cycles, loading = false, onSelect, onNew } = $props()
 
@@ -11,8 +12,8 @@
 
 <div class="list">
   <div class="list-header">
-    <h2>Cycle Saya</h2>
-    <button class="btn-new" onclick={onNew}>+ Baru</button>
+    <h2>{$i18n.myCycles}</h2>
+    <button class="btn-new" onclick={onNew}>{$i18n.newBtn}</button>
   </div>
 
   {#if cycles.length === 0}
@@ -29,8 +30,8 @@
             <rect x="68"  y="430" width="376" height="10"  rx="5"  fill="#F2E942" opacity="0.35"/>
           </svg>
         </div>
-        <p>Belum ada cycle.</p>
-        <button class="btn-start" onclick={onNew}>Buat Cycle Pertama</button>
+        <p>{$i18n.noCycles}</p>
+        <button class="btn-start" onclick={onNew}>{$i18n.createFirst}</button>
       </div>
     {/if}
   {:else}
@@ -46,14 +47,14 @@
             <div class="date-row">
               <span class="date-range">{fmtShort(cycle.start_date)} – {fmtShort(cycle.end_date)}</span>
               {#if active}
-                <span class="aktif-badge">AKTIF</span>
+                <span class="aktif-badge">{$i18n.active}</span>
               {/if}
             </div>
-            <div class="budget-text">Budget: Rp {fmtIDR(cycle.total_budget)}</div>
+            <div class="budget-text">{$i18n.budgetLabel}: Rp {fmtIDR(cycle.total_budget)}</div>
           </div>
           <div class="right">
             <div class="period-count">{done}/{total}</div>
-            <div class="period-label">periode</div>
+            <div class="period-label">{$i18n.periods}</div>
           </div>
         </div>
 
@@ -64,10 +65,8 @@
         {#if active && cp && cp.status === 'open'}
           {@const left = daysLeft(cp.end_date)}
           <div class="current-period-row">
-            <span class="cp-label">P{cp.period_number} sedang berjalan</span>
-            <span class="cp-days" class:urgent={left <= 1}>
-              {left <= 0 ? 'Hari ini terakhir!' : `${left} hari lagi`}
-            </span>
+            <span class="cp-label">{$i18n.running(cp.period_number)}</span>
+            <span class="cp-days" class:urgent={left <= 1}>{$i18n.daysLeft(left)}</span>
           </div>
         {:else if done > 0}
           <div class="stats">
