@@ -3,6 +3,7 @@
   import { api } from './lib/api.js'
   import { isSignedIn, signIn, signOut, getUser } from './lib/auth.js'
   import { i18n, lang } from './lib/i18n.js'
+  import { syncing, sessionExpired } from './lib/sync.js'
   import CycleList from './components/CycleList.svelte'
   import CycleDetail from './components/CycleDetail.svelte'
   import CreateCycle from './components/CreateCycle.svelte'
@@ -89,6 +90,30 @@
   }
 
   let showTabBar = $derived(signedIn && (view === 'list' || view === 'overview'))
+
+  // ── Re-auth overlay (session expired) ─────────────────────────────────────
+  let reAuthEl = $state(null)
+
+  $effect(() => {
+    if (!USES_BACKEND || !$sessionExpired || !reAuthEl) return
+    function renderBtn() {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: ({ credential }) => {
+          signIn(credential)
+          sessionExpired.set(false)
+          signedIn = true
+          user = getUser()
+          loadCycles()
+        },
+      })
+      window.google.accounts.id.renderButton(reAuthEl, {
+        theme: 'outline', size: 'large', shape: 'pill',
+      })
+    }
+    if (window.google) renderBtn()
+    else window.onGoogleLibraryLoad = renderBtn
+  })
 </script>
 
 <div class="app">
@@ -165,6 +190,28 @@
       <CycleDetail cycleId={selectedId} initialCycle={selectedCycle} onBack={showList} />
     {/if}
   </main>
+
+  <!-- Sync indicator -->
+  {#if $syncing}
+    <div class="sync-bar" class:above-tabbar={showTabBar}></div>
+  {/if}
+
+  <!-- Session-expired re-auth overlay -->
+  {#if USES_BACKEND && $sessionExpired}
+    <div class="reauth-overlay">
+      <div class="reauth-card">
+        <div class="reauth-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <h2 class="reauth-title">{$i18n.sessionExpiredTitle}</h2>
+        <p class="reauth-sub">{$i18n.sessionExpiredSub}</p>
+        <div bind:this={reAuthEl} class="reauth-btn-wrap"></div>
+      </div>
+    </div>
+  {/if}
 
   {#if showTabBar}
     <nav class="tab-bar">
@@ -338,6 +385,81 @@
   }
   .tab.active svg { stroke: var(--sapphire-dark); }
   .tab:not(.active):hover { color: var(--text-muted); }
+
+  /* ── Sync bar ── */
+  .sync-bar {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 3px;
+    z-index: 30;
+    background: rgba(242,233,66,0.2);
+    overflow: hidden;
+  }
+  .sync-bar.above-tabbar { bottom: 62px; }
+  .sync-bar::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -60%;
+    width: 60%;
+    background: var(--banana);
+    animation: sync-sweep 1.4s ease-in-out infinite;
+  }
+  @keyframes sync-sweep {
+    0%   { left: -60%; }
+    100% { left: 110%; }
+  }
+
+  /* ── Re-auth overlay ── */
+  .reauth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(10, 20, 40, 0.72);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .reauth-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    border-top: 4px solid var(--sapphire-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .reauth-icon {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--pumpkin-light);
+    color: var(--pumpkin);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reauth-title {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+  }
+  .reauth-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+  .reauth-btn-wrap { margin-top: 8px; }
 
   /* ── Error ── */
   .api-error {

@@ -33,7 +33,8 @@
       await api.checkIn(period.id, { result_type: resultType, result_amount: val })
       onUpdate()
     } catch (e) {
-      local = prev; showForm = true; error = e.message
+      local = prev; showForm = true
+      if (e.message !== 'session_expired') error = e.message
     } finally {
       inflight = false
     }

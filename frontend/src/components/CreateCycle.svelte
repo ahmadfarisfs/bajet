@@ -104,7 +104,7 @@
       })
       onCreated(cycle)
     } catch (e) {
-      error = e.message
+      if (e.message !== 'session_expired') error = e.message
     } finally {
       loading = false
     }

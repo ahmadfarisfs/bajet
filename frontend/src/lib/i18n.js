@@ -96,8 +96,10 @@ const s = {
     historyTitle:  'Per-Cycle History',
     legendSurplus: 'Surplus',
     legendDeficit: 'Deficit',
-    noData:        'No data yet',
-    noDataSub:     'Complete at least one period to see your summary here.',
+    noData:              'No data yet',
+    noDataSub:           'Complete at least one period to see your summary here.',
+    sessionExpiredTitle: 'Session Expired',
+    sessionExpiredSub:   'Your session has expired. Please sign in again to continue — your data is safe.',
   },
 
   id: {
@@ -188,8 +190,10 @@ const s = {
     historyTitle:  'Riwayat per Cycle',
     legendSurplus: 'Hemat (sisa)',
     legendDeficit: 'Kurang (defisit)',
-    noData:        'Belum ada data',
-    noDataSub:     'Selesaikan minimal satu periode untuk melihat ringkasan di sini.',
+    noData:              'Belum ada data',
+    noDataSub:           'Selesaikan minimal satu periode untuk melihat ringkasan di sini.',
+    sessionExpiredTitle: 'Sesi Berakhir',
+    sessionExpiredSub:   'Sesi kamu telah berakhir. Masuk lagi untuk melanjutkan — datamu aman.',
   },
 }
 
