@@ -2,7 +2,7 @@
 // Otherwise fall back to localStorage so the app works on GitHub Pages
 // without any server.
 
-import { getToken, signOut } from './auth.js'
+import { getToken, signIn, signOut } from './auth.js'
 import { startSync, endSync, sessionExpired } from './sync.js'
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -29,6 +29,10 @@ function buildHttpApi(base) {
         sessionExpired.set(true)
         throw new Error('session_expired')
       }
+      // Sliding session: backend sends a fresh token when the current one is
+      // within 7 days of expiry. Store it silently — user stays signed in.
+      const refreshed = res.headers.get('X-Refresh-Token')
+      if (refreshed) signIn(refreshed)
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
       return data

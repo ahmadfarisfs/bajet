@@ -27,9 +27,10 @@ func main() {
 		Format: "${method} ${uri} → ${status}\n",
 	}))
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete},
-		AllowHeaders: []string{"Content-Type", "Authorization"},
+		AllowOrigins:  []string{"*"},
+		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+		AllowHeaders:  []string{"Content-Type", "Authorization"},
+		ExposeHeaders: []string{"X-Refresh-Token"},
 	}))
 	e.Use(middleware.Recover())
 

@@ -2,9 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,12 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
 const userIDKey = "user_id"
 
-// ── Custom JWT (HS256) ────────────────────────────────────────────────────────
+// ── JWT helpers ───────────────────────────────────────────────────────────────
 
 func jwtSecret() []byte {
 	s := os.Getenv("JWT_SECRET")
@@ -28,60 +26,51 @@ func jwtSecret() []byte {
 	return []byte(s)
 }
 
-func b64url(b []byte) string {
-	return base64.RawURLEncoding.EncodeToString(b)
-}
-
-type tokenClaims struct {
-	Sub     string `json:"sub"`
+type appClaims struct {
 	Name    string `json:"name"`
 	Email   string `json:"email"`
 	Picture string `json:"picture"`
-	Exp     int64  `json:"exp"`
+	jwt.RegisteredClaims
 }
 
+const tokenTTL = 30 * 24 * time.Hour
+const renewWindow = 7 * 24 * time.Hour
+
 func issueToken(sub, name, email, picture string) (string, error) {
-	header, _ := json.Marshal(map[string]string{"alg": "HS256", "typ": "JWT"})
-	claims, _ := json.Marshal(tokenClaims{
-		Sub:     sub,
+	claims := appClaims{
 		Name:    name,
 		Email:   email,
 		Picture: picture,
-		Exp:     time.Now().Add(30 * 24 * time.Hour).Unix(),
-	})
-	unsigned := b64url(header) + "." + b64url(claims)
-	mac := hmac.New(sha256.New, jwtSecret())
-	mac.Write([]byte(unsigned))
-	return unsigned + "." + b64url(mac.Sum(nil)), nil
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   sub,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret())
 }
 
-func parseToken(token string) (*tokenClaims, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid token format")
-	}
-	unsigned := parts[0] + "." + parts[1]
-	mac := hmac.New(sha256.New, jwtSecret())
-	mac.Write([]byte(unsigned))
-	if !hmac.Equal([]byte(b64url(mac.Sum(nil))), []byte(parts[2])) {
-		return nil, fmt.Errorf("invalid signature")
-	}
-	raw, err := base64.RawURLEncoding.DecodeString(parts[1])
+func parseToken(tokenStr string) (*appClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &appClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return jwtSecret(), nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("invalid payload")
+		return nil, err
 	}
-	var c tokenClaims
-	if err := json.Unmarshal(raw, &c); err != nil {
-		return nil, fmt.Errorf("invalid claims")
+	claims, ok := token.Claims.(*appClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("invalid token")
 	}
-	if time.Now().Unix() > c.Exp {
-		return nil, fmt.Errorf("token expired")
-	}
-	return &c, nil
+	return claims, nil
 }
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 
+// AuthMiddleware verifies the custom JWT and silently renews it when it is
+// within renewWindow of expiry (sliding session).
 func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
@@ -92,7 +81,15 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
-		c.Set(userIDKey, claims.Sub)
+		c.Set(userIDKey, claims.Subject)
+
+		// Sliding expiry: renew if token expires within renewWindow.
+		if time.Until(claims.ExpiresAt.Time) < renewWindow {
+			if fresh, err := issueToken(claims.Subject, claims.Name, claims.Email, claims.Picture); err == nil {
+				c.Response().Header().Set("X-Refresh-Token", fresh)
+			}
+		}
+
 		return next(c)
 	}
 }
