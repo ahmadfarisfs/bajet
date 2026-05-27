@@ -33,6 +33,9 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
+	// Auth exchange — Google ID token → 30-day custom JWT
+	e.POST("/api/auth/google", handlers.GoogleSignIn)
+
 	// Waitlist — no auth required
 	e.POST("/api/waitlist", handlers.JoinWaitlist)
 	e.GET("/api/waitlist/count", handlers.WaitlistCount)

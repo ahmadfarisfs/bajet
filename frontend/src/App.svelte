@@ -36,10 +36,21 @@
     function renderBtn() {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: ({ credential }) => {
-          signIn(credential)
-          signedIn = true
-          user = getUser()
+        callback: async ({ credential }) => {
+          try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Sign-in failed')
+            signIn(data.token, data)
+            signedIn = true
+            user = getUser()
+          } catch (e) {
+            console.error('Sign-in failed:', e)
+          }
         },
       })
       window.google.accounts.id.renderButton(gSigninEl, {
@@ -99,12 +110,23 @@
     function renderBtn() {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: ({ credential }) => {
-          signIn(credential)
-          sessionExpired.set(false)
-          signedIn = true
-          user = getUser()
-          loadCycles()
+        callback: async ({ credential }) => {
+          try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Sign-in failed')
+            signIn(data.token, data)
+            sessionExpired.set(false)
+            signedIn = true
+            user = getUser()
+            loadCycles()
+          } catch (e) {
+            console.error('Re-auth failed:', e)
+          }
         },
       })
       window.google.accounts.id.renderButton(reAuthEl, {
