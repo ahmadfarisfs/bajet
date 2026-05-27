@@ -76,6 +76,9 @@
             {#if s.totalDeficit > 0}
               <span class="stat red">↓ Rp {fmtIDR(s.totalDeficit)}</span>
             {/if}
+            <span class="stat" class:green={s.net >= 0} class:red={s.net < 0}>
+              {$i18n.net}: {s.net >= 0 ? '+' : ''}Rp {fmtIDR(s.net)}
+            </span>
           </div>
         {/if}
       </button>
