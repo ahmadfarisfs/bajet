@@ -1,6 +1,7 @@
 <script>
   import { fmtIDR, fmtShort, cycleSummary } from '../lib/utils.js'
   import { i18n } from '../lib/i18n.js'
+  import BehaviorAnalysis from './BehaviorAnalysis.svelte'
 
   let { cycles } = $props()
 
@@ -167,6 +168,9 @@
       </div>
     </div>
   {/if}
+
+  <!-- Behavior analysis (brain.js) -->
+  <BehaviorAnalysis {cycles} />
 
   <!-- Empty state -->
   {#if cycles.length === 0 || stats.periodsCompleted === 0}
