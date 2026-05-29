@@ -1,5 +1,5 @@
 <script>
-  import brain from 'brain.js'
+  import { NeuralNetwork } from '../lib/nn.js'
   import { i18n } from '../lib/i18n.js'
 
   let { cycles } = $props()
@@ -81,8 +81,8 @@
   let _net = null
   function getNet() {
     if (_net) return _net
-    _net = new brain.NeuralNetwork({ hiddenLayers: [8, 4], activation: 'sigmoid' })
-    _net.train(TRAINING, { iterations: 2000, errorThresh: 0.005, log: false })
+    _net = new NeuralNetwork({ hiddenLayers: [8, 4] })
+    _net.train(TRAINING, { iterations: 2000, errorThresh: 0.005 })
     return _net
   }
 
