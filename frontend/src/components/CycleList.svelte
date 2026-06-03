@@ -1,5 +1,6 @@
 <script>
   import { fmtShort, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
+  import PrayerProgress from './PrayerProgress.svelte'
 
   let { cycles, loading = false, onSelect, onNew } = $props()
 
@@ -10,6 +11,8 @@
 </script>
 
 <div class="list">
+  <PrayerProgress />
+
   <div class="list-header">
     <h2>Cycle Saya</h2>
     <button class="btn-new" onclick={onNew}>+ Baru</button>
