@@ -24,16 +24,18 @@
   let showAdjusted = $derived(local.status === 'open' && adjusted != null && adjusted !== local.budget)
 
   async function submit() {
-    const val = parseFloat(amount)
+    const even = resultType === 'even'
+    const val = even ? 0 : parseFloat(amount)
     if (isNaN(val) || val < 0) { error = $i18n.invalidAmt; return }
+    const type = even ? 'sisa' : resultType
 
     const prev = { ...local }
     inflight = true
-    local = { ...local, status: 'completed', result_type: resultType, result_amount: val }
+    local = { ...local, status: 'completed', result_type: type, result_amount: val }
     showForm = false; amount = ''; error = ''
 
     try {
-      await api.checkIn(period.id, { result_type: resultType, result_amount: val })
+      await api.checkIn(period.id, { result_type: type, result_amount: val })
       onUpdate()
     } catch (e) {
       local = prev; showForm = true
@@ -88,9 +90,14 @@
   </div>
 
   {#if local.status === 'completed'}
-    <div class="result" class:sisa={local.result_type === 'sisa'} class:defisit={local.result_type === 'defisit'}>
-      <span class="result-type">{local.result_type === 'sisa' ? $i18n.surplusLabel : $i18n.deficitLabel}</span>
-      <span class="result-amount num">Rp {fmtIDR(local.result_amount)}</span>
+    {@const even = local.result_amount === 0}
+    <div class="result" class:even class:sisa={!even && local.result_type === 'sisa'} class:defisit={!even && local.result_type === 'defisit'}>
+      {#if even}
+        <span class="result-type result-amount">{$i18n.evenLabel}</span>
+      {:else}
+        <span class="result-type">{local.result_type === 'sisa' ? $i18n.surplusLabel : $i18n.deficitLabel}</span>
+        <span class="result-amount num">Rp {fmtIDR(local.result_amount)}</span>
+      {/if}
       <button class="undo-btn" onclick={undo} disabled={inflight}>{$i18n.undoBtn}</button>
     </div>
   {:else if isFuture}
@@ -102,16 +109,24 @@
           class:active={resultType === 'sisa'} onclick={() => resultType = 'sisa'}>
           {$i18n.surplus}
         </button>
+        <button class="toggle-btn even" role="radio" aria-checked={resultType === 'even'}
+          class:active={resultType === 'even'} onclick={() => resultType = 'even'}>
+          {$i18n.even}
+        </button>
         <button class="toggle-btn defisit" role="radio" aria-checked={resultType === 'defisit'}
           class:active={resultType === 'defisit'} onclick={() => resultType = 'defisit'}>
           {$i18n.deficit}
         </button>
       </div>
-      <div class="input-row">
-        <span class="prefix">Rp</span>
-        <input type="number" inputmode="numeric" placeholder="0" min="0" bind:value={amount}
-          onkeydown={(e) => e.key === 'Enter' && submit()} />
-      </div>
+      {#if resultType === 'even'}
+        <p class="even-hint">{$i18n.evenHint}</p>
+      {:else}
+        <div class="input-row">
+          <span class="prefix">Rp</span>
+          <input type="number" inputmode="numeric" placeholder="0" min="0" bind:value={amount}
+            onkeydown={(e) => e.key === 'Enter' && submit()} />
+        </div>
+      {/if}
       {#if error}<p class="err">{error}</p>{/if}
       <div class="actions">
         <button class="btn-cancel" onclick={() => { showForm = false; error = '' }}>{$i18n.cancel}</button>
@@ -171,6 +186,7 @@
   }
   .result.sisa    { background: var(--success-light); color: var(--success); }
   .result.defisit { background: var(--danger-light);  color: var(--danger); }
+  .result.even    { background: var(--sapphire-light); color: var(--sapphire-dark); }
   .result-type   { font-weight: 600; }
   .result-amount { font-family: var(--font-heading); font-weight: 700; flex: 1; }
   .undo-btn {
@@ -181,7 +197,7 @@
 
   .form { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
   .toggle {
-    display: grid; grid-template-columns: 1fr 1fr;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
     padding: 3px; gap: 3px;
     background: var(--surface-2);
     border-radius: var(--radius-xs);
@@ -195,6 +211,13 @@
   }
   .toggle-btn.active { background: var(--surface); color: var(--success); box-shadow: var(--shadow-sm); }
   .toggle-btn.defisit.active { color: var(--danger); }
+  .toggle-btn.even.active { color: var(--sapphire-dark); }
+  .even-hint {
+    font-size: 13px; color: var(--text-muted);
+    padding: 12px 14px;
+    background: var(--surface-2);
+    border-radius: var(--radius-xs);
+  }
 
   .input-row {
     display: flex; align-items: center;

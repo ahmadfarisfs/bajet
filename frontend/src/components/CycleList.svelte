@@ -34,7 +34,11 @@
       {#if hero.period.status === 'completed'}
         <div class="hero-label">{$i18n.periodCheckedIn}</div>
         <div class="hero-amount num">
-          {hero.period.result_type === 'sisa' ? '+' : '−'}Rp {fmtIDR(hero.period.result_amount)}
+          {#if hero.period.result_amount === 0}
+            {$i18n.even}
+          {:else}
+            {hero.period.result_type === 'sisa' ? '+' : '−'}Rp {fmtIDR(hero.period.result_amount)}
+          {/if}
         </div>
       {:else}
         <div class="hero-label">{$i18n.spendThisPeriod}</div>
