@@ -28,7 +28,7 @@ func main() {
 	}))
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:  []string{"*"},
-		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowHeaders:  []string{"Content-Type", "Authorization"},
 		ExposeHeaders: []string{"X-Refresh-Token"},
 	}))
@@ -47,6 +47,7 @@ func main() {
 	api.GET("/cycles", handlers.GetCycles)
 	api.POST("/cycles", handlers.CreateCycle)
 	api.GET("/cycles/:id", handlers.GetCycle)
+	api.PUT("/cycles/:id", handlers.UpdateCycle)
 	api.DELETE("/cycles/:id", handlers.DeleteCycle)
 	api.POST("/periods/:id/checkin", handlers.CheckIn)
 	api.DELETE("/periods/:id/checkin", handlers.UndoCheckIn)

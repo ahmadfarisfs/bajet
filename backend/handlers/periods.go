@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/ahmadfarisfs/bajet/database"
 	"github.com/ahmadfarisfs/bajet/models"
@@ -28,6 +29,11 @@ func CheckIn(c echo.Context) error {
 	}
 	if period.Status == models.StatusCompleted {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "period already completed"})
+	}
+	// Dates are stored as UTC midnight and users sit anywhere from UTC-12 to
+	// UTC+14, so a period has started for someone once now+14h reaches it.
+	if period.StartDate.After(time.Now().UTC().Add(14 * time.Hour)) {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "period has not started yet"})
 	}
 	if req.ResultType != models.ResultSisa && req.ResultType != models.ResultDefisit {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "result_type must be 'sisa' or 'defisit'"})
