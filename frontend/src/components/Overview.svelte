@@ -2,6 +2,12 @@
   import { fmtIDR, fmtShort, cycleSummary } from '../lib/utils.js'
   import { i18n } from '../lib/i18n.js'
   import BehaviorAnalysis from './BehaviorAnalysis.svelte'
+  import { cyclesToCsv, downloadFile } from '../lib/export.js'
+  import { todayStr } from '../lib/utils.js'
+
+  function exportCsv() {
+    downloadFile(`bajet-${todayStr()}.csv`, cyclesToCsv(cycles), 'text/csv;charset=utf-8')
+  }
 
   let { cycles } = $props()
 
@@ -169,8 +175,21 @@
     </div>
   {/if}
 
-  <!-- Behavior analysis (brain.js) -->
+  <!-- Behavior analysis -->
   <BehaviorAnalysis {cycles} />
+
+  {#if cycles.length > 0}
+    <div class="export-card">
+      <div class="export-text">
+        <strong>{$i18n.exportCsv}</strong>
+        <small>{$i18n.exportHint}</small>
+      </div>
+      <button class="btn-export" onclick={exportCsv}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        CSV
+      </button>
+    </div>
+  {/if}
 
   <!-- Empty state -->
   {#if cycles.length === 0 || stats.periodsCompleted === 0}
@@ -193,9 +212,9 @@
 
 <style>
   .overview {
-    max-width: 480px;
+    max-width: var(--page-max);
     margin: 0 auto;
-    padding: 16px 16px 80px;
+    padding: 16px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 32px);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -204,31 +223,19 @@
   /* ── Hero ── */
   .hero {
     border-radius: var(--radius);
-    padding: 24px 20px 20px;
+    padding: 22px 20px 20px;
     position: relative;
     overflow: hidden;
+    color: #fff;
+    box-shadow: var(--shadow-lg);
   }
   .hero-positive {
-    background: linear-gradient(135deg, var(--sapphire-dark) 0%, var(--primary) 100%);
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(242,233,66,0.16), transparent 55%),
+      linear-gradient(160deg, var(--sapphire-dark), var(--sapphire-deep));
   }
   .hero-negative {
-    background: linear-gradient(135deg, #7f1d1d 0%, var(--danger) 100%);
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.06);
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    bottom: -30px; left: 30px;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.04);
+    background: linear-gradient(160deg, #7a2020, #3f0f12);
   }
   .hero-inner { position: relative; z-index: 1; }
   .hero-label {
@@ -239,9 +246,9 @@
   }
   .hero-amount {
     font-family: var(--font-heading);
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1.05;
     margin-bottom: 6px;
     letter-spacing: -1px;
   }
@@ -278,7 +285,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
   }
   .stat-icon {
     width: 34px; height: 34px;
@@ -321,7 +328,7 @@
     background: var(--surface);
     border-radius: var(--radius-sm);
     padding: 16px;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
   }
   .rate-header {
     display: flex;
@@ -370,7 +377,7 @@
     background: var(--surface);
     border-radius: var(--radius-sm);
     padding: 16px;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
   }
   .chart-title {
     font-family: var(--font-heading);
@@ -410,8 +417,8 @@
     transition: width 0.5s ease;
     min-width: 4px;
   }
-  .chart-bar.pos { background: linear-gradient(90deg, var(--primary), #4fa0f0); }
-  .chart-bar.neg { background: linear-gradient(90deg, var(--danger),  #f87171); }
+  .chart-bar.pos { background: var(--success); }
+  .chart-bar.neg { background: var(--danger); }
 
   .chart-amount {
     font-family: var(--font-heading);
@@ -422,7 +429,7 @@
     text-align: right;
     white-space: nowrap;
   }
-  .chart-amount.pos { color: var(--primary); }
+  .chart-amount.pos { color: var(--success); }
   .chart-amount.neg { color: var(--danger);  }
 
   .chart-legend {
@@ -439,8 +446,30 @@
     display: inline-block;
     flex-shrink: 0;
   }
-  .legend-dot.pos { background: var(--primary); }
+  .legend-dot.pos { background: var(--success); }
   .legend-dot.neg { background: var(--danger);  }
+
+  /* ── Export ── */
+  .export-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .export-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .export-text strong { font-family: var(--font-heading); font-size: 14px; }
+  .export-text small { font-size: 12px; color: var(--text-muted); }
+  .btn-export {
+    display: inline-flex; align-items: center; gap: 6px;
+    flex-shrink: 0;
+    padding: 9px 14px;
+    border-radius: 999px;
+    font-family: var(--font-heading); font-size: 13px; font-weight: 700;
+    background: var(--sapphire-light); color: var(--sapphire-dark);
+  }
 
   /* ── Empty ── */
   .empty-state {

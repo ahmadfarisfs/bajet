@@ -4,6 +4,7 @@
 
 import { getToken, signIn, signOut } from './auth.js'
 import { startSync, endSync, sessionExpired } from './sync.js'
+import { buildPeriods, calcBudgets, daysBetween, daysUntil } from './utils.js'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -45,6 +46,7 @@ function buildHttpApi(base) {
     getCycles:   ()         => req('GET',    '/api/cycles'),
     getCycle:    (id)       => req('GET',    `/api/cycles/${id}`),
     createCycle: (data)     => req('POST',   '/api/cycles', data),
+    updateCycle: (id, data) => req('PUT',    `/api/cycles/${id}`, data),
     deleteCycle: (id)       => req('DELETE', `/api/cycles/${id}`),
     checkIn:     (id, data) => req('POST',   `/api/periods/${id}/checkin`, data),
     undoCheckIn: (id)       => req('DELETE', `/api/periods/${id}/checkin`),
@@ -69,71 +71,23 @@ function buildLocalApi() {
     localStorage.setItem(KEY, JSON.stringify(data))
   }
 
-  function calcDistribution(totalDays, n, mode) {
-    const base = Math.floor(totalDays / n)
-    const extra = totalDays % n
-    const dist = Array(n).fill(base)
-    for (let i = 0; i < extra; i++) dist[i]++
-    if (mode === 'behavioral') {
-      if (extra >= 2) { dist[0]++; dist[extra - 1]-- }
-      else            { dist[0]++; dist[n - 1]-- }
-    }
-    return dist
-  }
-
-  function calcBudgets(totalBudget, n, mode) {
-    const budgets = Array(n).fill(0)
-    if (mode === 'progresif') {
-      const tw = n * (n + 1) / 2
-      let sum = 0
-      for (let i = 0; i < n - 1; i++) {
-        const b = Math.floor(totalBudget * (i + 1) / tw)
-        budgets[i] = b; sum += b
-      }
-      budgets[n - 1] = totalBudget - sum
-    } else if (mode === 'menurun') {
-      const tw = n * (n + 1) / 2
-      let sum = 0
-      for (let i = 0; i < n - 1; i++) {
-        const b = Math.floor(totalBudget * (n - i) / tw)
-        budgets[i] = b; sum += b
-      }
-      budgets[n - 1] = totalBudget - sum
-    } else {
-      const base = Math.round(totalBudget / n)
-      budgets.fill(base)
-    }
-    return budgets
-  }
-
-  function shiftDate(dateStr, n) {
-    const [y, m, d] = dateStr.split('-').map(Number)
-    const dt = new Date(y, m - 1, d + n)
-    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
-  }
-
-  function daysBetween(start, end) {
-    const [sy, sm, sd] = start.split('-').map(Number)
-    const [ey, em, ed] = end.split('-').map(Number)
-    return Math.round((new Date(ey, em-1, ed) - new Date(sy, sm-1, sd)) / 86400000) + 1
-  }
-
-  function buildPeriods(cycleId, startDate, endDate, totalBudget, mode, seq, numPeriods) {
-    const n = Math.min(Math.max(numPeriods || 4, 1), 12)
-    const dist = calcDistribution(daysBetween(startDate, endDate), n, mode)
-    const budgets = calcBudgets(totalBudget, n, mode)
+  function buildLocalPeriods(cycleId, startDate, endDate, totalBudget, mode, seq, n) {
     const now = new Date().toISOString()
-    const periods = []
-    let cur = startDate
-    for (let i = 0; i < n; i++) {
-      seq.period++
-      const pEnd = shiftDate(cur, dist[i] - 1)
-      periods.push({ id: seq.period, cycle_id: cycleId, period_number: i + 1,
-        start_date: cur, end_date: pEnd, budget: budgets[i], status: 'open',
-        result_type: '', result_amount: 0, created_at: now })
-      cur = shiftDate(pEnd, 1)
-    }
-    return periods
+    return buildPeriods(startDate, endDate, Number(totalBudget), mode, n).map(p => ({
+      id: ++seq.period, cycle_id: cycleId, period_number: p.period_number,
+      start_date: p.start_date, end_date: p.end_date, budget: p.budget, status: 'open',
+      result_type: '', result_amount: 0, created_at: now,
+    }))
+  }
+
+  // Same rules as the backend's parseCycleRequest. Returns [values, errorMessage].
+  function validate({ start_date, end_date, total_budget, division_mode, num_periods }) {
+    if (!start_date || !end_date) return [null, 'invalid dates']
+    if (daysBetween(start_date, end_date) < 2) return [null, 'end_date must be after start_date']
+    if (!(Number(total_budget) > 0)) return [null, 'total_budget must be greater than 0']
+    const n = num_periods >= 1 && num_periods <= 12 ? Math.round(num_periods) : 4
+    if (daysBetween(start_date, end_date) < n) return [null, 'date range is shorter than the number of periods']
+    return [{ start_date, end_date, total_budget: Number(total_budget), division_mode: division_mode || 'equal', num_periods: n }, '']
   }
 
   const ok   = (v)   => Promise.resolve(v)
@@ -149,20 +103,40 @@ function buildLocalApi() {
       return c ? ok(c) : fail('cycle not found')
     },
 
-    createCycle({ start_date, end_date, total_budget, division_mode, num_periods }) {
+    createCycle(input) {
+      const [v, err] = validate(input)
+      if (err) return fail(err)
       const data = load()
       data.seq.cycle  = (data.seq.cycle  || 0) + 1
       data.seq.period = (data.seq.period || 0)
-      const mode = division_mode || 'equal'
-      const n    = Math.min(Math.max(num_periods || 4, 1), 12)
-      const now  = new Date().toISOString()
       const cycle = {
-        id: data.seq.cycle, start_date, end_date,
-        total_budget: Number(total_budget), division_mode: mode,
-        num_periods: n, created_at: now,
-        periods: buildPeriods(data.seq.cycle, start_date, end_date, total_budget, mode, data.seq, n),
+        id: data.seq.cycle, ...v, created_at: new Date().toISOString(),
+        periods: buildLocalPeriods(data.seq.cycle, v.start_date, v.end_date, v.total_budget, v.division_mode, data.seq, v.num_periods),
       }
       data.cycles.push(cycle)
+      persist(data)
+      return ok(cycle)
+    },
+
+    updateCycle(id, input) {
+      const [v, err] = validate(input)
+      if (err) return fail(err)
+      const data = load()
+      const cycle = data.cycles.find(c => c.id === Number(id))
+      if (!cycle) return fail('cycle not found')
+      const hasCheckIns = cycle.periods.some(p => p.status === 'completed')
+      const reshape = v.start_date !== cycle.start_date || v.end_date !== cycle.end_date ||
+        v.num_periods !== cycle.periods.length
+      if (reshape && hasCheckIns) {
+        return fail("dates and number of periods can't change after a check-in; undo the check-ins first")
+      }
+      Object.assign(cycle, v)
+      if (hasCheckIns) {
+        const budgets = calcBudgets(v.total_budget, cycle.periods.length, v.division_mode)
+        cycle.periods.forEach((p, i) => { p.budget = budgets[i] })
+      } else {
+        cycle.periods = buildLocalPeriods(cycle.id, v.start_date, v.end_date, v.total_budget, v.division_mode, data.seq, v.num_periods)
+      }
       persist(data)
       return ok(cycle)
     },
@@ -180,6 +154,7 @@ function buildLocalApi() {
         const p = cycle.periods.find(p => p.id === Number(periodId))
         if (p) {
           if (p.status === 'completed') return fail('period already completed')
+          if (daysUntil(p.start_date) > 0) return fail('period has not started yet')
           p.status = 'completed'; p.result_type = result_type
           p.result_amount = Number(result_amount)
           persist(data); return ok(p)

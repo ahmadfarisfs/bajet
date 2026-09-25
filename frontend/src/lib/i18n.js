@@ -18,7 +18,7 @@ const s = {
 
     // Cycle list
     myCycles:    'My Cycles',
-    newBtn:      '+ New',
+    newBtn:      'New',
     noCycles:    'No cycles yet.',
     createFirst: 'Create First Cycle',
     budgetLabel: 'Budget',
@@ -26,9 +26,11 @@ const s = {
     active:      'ACTIVE',
     running:     (n) => `P${n} running`,
     daysLeft:    (n) => n <= 0 ? 'Last day!' : `${n} days left`,
+    spendThisPeriod: 'Budget for this period',
+    periodCheckedIn: 'Checked in for this period',
 
     // Create cycle
-    backCancel:    '← Cancel',
+    backCancel:    'Cancel',
     newCycle:      'New Cycle',
     startDate:     'Start Date',
     endDate:       'End Date',
@@ -46,6 +48,7 @@ const s = {
     previewLabel:  'Period Preview',
     previewDate:   'Date',
     previewDays:   'Days',
+    daysShort:     (n) => `${n}d`,
     previewBudget: 'Budget',
     errDates:      'Dates are required',
     errBudget:     'Budget must be greater than 0',
@@ -70,7 +73,7 @@ const s = {
     checkIn:      '+ Check-in',
 
     // Cycle detail
-    back:          '← Back',
+    back:          'Back',
     deleteConfirm: 'Delete this cycle and all its data?',
     periodsDone:   (c, t) => `${c}/${t} periods done`,
     activePeriod:  'Active period',
@@ -78,6 +81,40 @@ const s = {
     totalDeficit:  'Total Deficit',
     net:           'Net',
     spent:         'Spent',
+
+    // Edit cycle
+    editCycle:     'Edit Cycle',
+    editBtn:       'Edit',
+    saveChanges:   'Save Changes',
+    saving:        'Saving…',
+    lockedHint:    'Dates and number of periods are locked after the first check-in. Budget and mode can still change.',
+
+    // Adjusted budget
+    planned:       'Planned',
+    adjusted:      'Adjusted',
+    carrySurplus:  (amt) => `Rp ${amt} surplus spread over the remaining periods`,
+    carryDeficit:  (amt) => `Rp ${amt} deficit taken from the remaining periods`,
+
+    // Next cycle
+    cycleFinished:   'This cycle is finished',
+    nextCycleSub:    'Start the next one with the same budget and settings.',
+    startNextCycle:  'Start next cycle',
+    noActiveCycle:   'No active cycle',
+    nextCycleDates:  (range) => `Next: ${range}`,
+
+    // Overdue check-ins
+    overdueTitle:  (n) => n === 1 ? 'A check-in is waiting' : `${n} check-ins are waiting`,
+    overdueSub:    (p, ago) => `P${p} ended ${ago}. Tap to check in.`,
+    endedAgo:      (n) => n === 1 ? 'yesterday' : `${n} days ago`,
+    overdueBadge:  'Overdue',
+
+    // Export & reminders
+    remindCal:     'Calendar reminders',
+    remindCalHint: 'Adds each period\'s last day to your calendar with a 7 PM reminder.',
+    icsTitle:      (n) => `Bajet: check in P${n}`,
+    icsBody:       (n, amt) => `Last day of P${n} (budget Rp ${amt}). Open Bajet to check in.`,
+    exportCsv:     'Export CSV',
+    exportHint:    'Download every cycle and check-in as a spreadsheet backup.',
 
     // Overview
     heroSaved:     '🎉 Total saved',
@@ -144,7 +181,7 @@ const s = {
 
     // Cycle list
     myCycles:    'Cycle Saya',
-    newBtn:      '+ Baru',
+    newBtn:      'Baru',
     noCycles:    'Belum ada cycle.',
     createFirst: 'Buat Cycle Pertama',
     budgetLabel: 'Budget',
@@ -152,9 +189,11 @@ const s = {
     active:      'AKTIF',
     running:     (n) => `P${n} sedang berjalan`,
     daysLeft:    (n) => n <= 0 ? 'Hari ini terakhir!' : `${n} hari lagi`,
+    spendThisPeriod: 'Budget periode ini',
+    periodCheckedIn: 'Sudah check-in periode ini',
 
     // Create cycle
-    backCancel:    '← Batal',
+    backCancel:    'Batal',
     newCycle:      'Buat Cycle Baru',
     startDate:     'Tanggal Mulai',
     endDate:       'Tanggal Selesai',
@@ -172,6 +211,7 @@ const s = {
     previewLabel:  'Preview Periode',
     previewDate:   'Tanggal',
     previewDays:   'Hari',
+    daysShort:     (n) => `${n}h`,
     previewBudget: 'Budget',
     errDates:      'Tanggal harus diisi',
     errBudget:     'Budget harus lebih dari 0',
@@ -196,7 +236,7 @@ const s = {
     checkIn:      '+ Check-in',
 
     // Cycle detail
-    back:          '← Kembali',
+    back:          'Kembali',
     deleteConfirm: 'Hapus cycle ini beserta semua datanya?',
     periodsDone:   (c, t) => `${c}/${t} periode selesai`,
     activePeriod:  'Periode aktif',
@@ -204,6 +244,40 @@ const s = {
     totalDeficit:  'Total Defisit',
     net:           'Net',
     spent:         'Terpakai',
+
+    // Edit cycle
+    editCycle:     'Ubah Cycle',
+    editBtn:       'Ubah',
+    saveChanges:   'Simpan Perubahan',
+    saving:        'Menyimpan…',
+    lockedHint:    'Tanggal dan jumlah periode terkunci setelah check-in pertama. Budget dan mode masih bisa diubah.',
+
+    // Adjusted budget
+    planned:       'Rencana',
+    adjusted:      'Disesuaikan',
+    carrySurplus:  (amt) => `Sisa Rp ${amt} dibagi ke periode berikutnya`,
+    carryDeficit:  (amt) => `Defisit Rp ${amt} diambil dari periode berikutnya`,
+
+    // Next cycle
+    cycleFinished:   'Cycle ini sudah selesai',
+    nextCycleSub:    'Mulai cycle berikutnya dengan budget dan pengaturan yang sama.',
+    startNextCycle:  'Mulai cycle berikutnya',
+    noActiveCycle:   'Tidak ada cycle aktif',
+    nextCycleDates:  (range) => `Berikutnya: ${range}`,
+
+    // Overdue check-ins
+    overdueTitle:  (n) => n === 1 ? 'Ada check-in yang menunggu' : `${n} check-in menunggu`,
+    overdueSub:    (p, ago) => `P${p} berakhir ${ago}. Ketuk untuk check-in.`,
+    endedAgo:      (n) => n === 1 ? 'kemarin' : `${n} hari lalu`,
+    overdueBadge:  'Terlambat',
+
+    // Export & reminders
+    remindCal:     'Pengingat kalender',
+    remindCalHint: 'Tambahkan hari terakhir tiap periode ke kalender dengan pengingat jam 19.00.',
+    icsTitle:      (n) => `Bajet: check-in P${n}`,
+    icsBody:       (n, amt) => `Hari terakhir P${n} (budget Rp ${amt}). Buka Bajet untuk check-in.`,
+    exportCsv:     'Ekspor CSV',
+    exportHint:    'Unduh semua cycle dan check-in sebagai cadangan spreadsheet.',
 
     // Overview
     heroSaved:     '🎉 Total kamu hemat',

@@ -1,10 +1,13 @@
 <script>
+  import { untrack } from 'svelte'
   import { api } from '../lib/api.js'
-  import { fmtDate, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft } from '../lib/utils.js'
+  import { fmtDate, fmtIDR, cycleSummary, isActive, activePeriod, daysLeft, adjustedBudgets } from '../lib/utils.js'
+  import { cycleToIcs, downloadFile } from '../lib/export.js'
   import PeriodCard from './PeriodCard.svelte'
+  import PeriodStrip from './PeriodStrip.svelte'
   import { i18n } from '../lib/i18n.js'
 
-  let { cycleId, onBack, initialCycle = null } = $props()
+  let { cycleId, onBack, onEdit, onStartNext, isLatest = false, initialCycle = null } = $props()
 
   // Seed with the pre-loaded cycle from parent for instant display; refresh in background
   let cycle = $state(initialCycle ?? null)
@@ -34,23 +37,52 @@
     }
   }
 
-  $effect(() => { load() })
+  function exportReminders() {
+    const ics = cycleToIcs(cycle, {
+      title: (p) => $i18n.icsTitle(p.period_number),
+      body:  (p) => $i18n.icsBody(p.period_number, fmtIDR(adjusted.byId.get(p.id) ?? p.budget)),
+    })
+    downloadFile(`bajet-${cycle.start_date.substring(0, 10)}.ics`, ics, 'text/calendar')
+  }
 
-  let summary   = $derived(cycle ? cycleSummary(cycle.periods ?? []) : null)
-  let completed = $derived(cycle ? (cycle.periods ?? []).filter(p => p.status === 'completed').length : 0)
-  let total     = $derived(cycle ? (cycle.periods ?? []).length : 0)
+  // Reload only when the id changes; load() reads `cycle`, and tracking it
+  // would make every successful load trigger another one.
+  $effect(() => { cycleId; untrack(load) })
+
+  const MODE_KEY = { equal: 'modeEqual', behavioral: 'modeBehav', menurun: 'modeMenurun', progresif: 'modeProgresif' }
+
+  let periods   = $derived(cycle?.periods ?? [])
+  let summary   = $derived(cycleSummary(periods))
+  let adjusted  = $derived(adjustedBudgets(periods))
+  let completed = $derived(periods.filter(p => p.status === 'completed').length)
+  let total     = $derived(periods.length)
   let isCurrent = $derived(cycle ? isActive(cycle.start_date, cycle.end_date) : false)
-  let cp        = $derived(cycle ? activePeriod(cycle.periods ?? []) : null)
+  let cp        = $derived(activePeriod(periods))
+  let hasOpen   = $derived(periods.some(p => p.status !== 'completed'))
+  let finished  = $derived(cycle ? (daysLeft(cycle.end_date) < 0 || (total > 0 && completed === total)) : false)
 </script>
 
-<div class="view">
+<div class="page">
   <div class="topbar">
-    <button class="back" onclick={onBack}>{$i18n.back}</button>
-    <button class="del-btn" onclick={deleteCycle} title={$i18n.deleteConfirm}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-      </svg>
+    <button class="back" onclick={onBack}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      {$i18n.back}
     </button>
+    {#if cycle}
+      <div class="tools">
+        <button class="icon-btn" onclick={() => onEdit(cycle)} title={$i18n.editBtn} aria-label={$i18n.editBtn}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+        {#if hasOpen}
+          <button class="icon-btn" onclick={exportReminders} title={$i18n.remindCalHint} aria-label={$i18n.remindCal}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v4M10 16h4"/></svg>
+          </button>
+        {/if}
+        <button class="icon-btn danger" onclick={deleteCycle} title={$i18n.deleteConfirm} aria-label={$i18n.deleteConfirm}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+    {/if}
   </div>
 
   {#if loading}
@@ -58,203 +90,168 @@
   {:else if error}
     <div class="center err">{error}</div>
   {:else if cycle}
-    <div class="cycle-header">
-      <div class="cycle-title">
-        <h1>{fmtDate(cycle.start_date)} – {fmtDate(cycle.end_date)}</h1>
-        <span class="mode-badge">{cycle.division_mode === 'behavioral' ? 'Behavioral' : 'Equal'}</span>
+    <div class="head">
+      <div class="head-row">
+        <span class="mode">{$i18n[MODE_KEY[cycle.division_mode] ?? 'modeEqual']}</span>
+        {#if isCurrent && cp && cp.status === 'open'}
+          {@const left = daysLeft(cp.end_date)}
+          <span class="now" class:urgent={left <= 1}>P{cp.period_number} · {left <= 0 ? $i18n.lastDay : $i18n.daysLeftN(left)}</span>
+        {/if}
       </div>
-      <p class="budget-label">Budget: <strong>Rp {fmtIDR(cycle.total_budget)}</strong></p>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" style="width: {total ? (completed/total*100) : 0}%"></div>
-      </div>
-      <p class="progress-text">{$i18n.periodsDone(completed, total)}</p>
-
-      {#if isCurrent && cp && cp.status === 'open'}
-        {@const left = daysLeft(cp.end_date)}
-        <div class="active-period-banner">
-          <div class="ap-left">
-            <span class="ap-label">{$i18n.activePeriod}</span>
-            <span class="ap-name">P{cp.period_number}</span>
-          </div>
-          <span class="ap-countdown" class:urgent={left <= 1}>
-            {left <= 0 ? $i18n.lastDay : $i18n.daysLeftN(left)}
-          </span>
-        </div>
-      {/if}
+      <h1>{fmtDate(cycle.start_date)} – {fmtDate(cycle.end_date)}</h1>
+      <div class="head-budget num">Rp {fmtIDR(cycle.total_budget)}</div>
+      <PeriodStrip {periods} tone="dark" />
+      <p class="head-progress">{$i18n.periodsDone(completed, total)}</p>
     </div>
 
-    {#if summary && completed > 0}
-      <div class="summary-grid">
-        <div class="summary-card green">
-          <div class="s-label">{$i18n.totalSurplus}</div>
-          <div class="s-val">Rp {fmtIDR(summary.totalSaved)}</div>
+    {#if finished && isLatest}
+      <div class="next-card">
+        <div>
+          <strong>{$i18n.cycleFinished}</strong>
+          <small>{$i18n.nextCycleSub}</small>
         </div>
-        <div class="summary-card red">
-          <div class="s-label">{$i18n.totalDeficit}</div>
-          <div class="s-val">Rp {fmtIDR(summary.totalDeficit)}</div>
+        <button class="btn-next" onclick={() => onStartNext(cycle)}>{$i18n.startNextCycle}</button>
+      </div>
+    {/if}
+
+    {#if completed > 0}
+      <div class="stats">
+        <div class="stat">
+          <span class="s-label">{$i18n.net}</span>
+          <span class="s-val num" class:green={summary.net >= 0} class:red={summary.net < 0}>
+            {summary.net >= 0 ? '+' : '−'}Rp {fmtIDR(Math.abs(summary.net))}
+          </span>
         </div>
-        <div class="summary-card" class:green={summary.net >= 0} class:red={summary.net < 0}>
-          <div class="s-label">{$i18n.net}</div>
-          <div class="s-val">{summary.net >= 0 ? '+' : ''}Rp {fmtIDR(Math.abs(summary.net))}</div>
+        <div class="stat">
+          <span class="s-label">{$i18n.spent}</span>
+          <span class="s-val num">Rp {fmtIDR(summary.totalSpent)}</span>
         </div>
-        <div class="summary-card">
-          <div class="s-label">{$i18n.spent}</div>
-          <div class="s-val">Rp {fmtIDR(summary.totalSpent)}</div>
+        <div class="stat">
+          <span class="s-label">{$i18n.totalSurplus}</span>
+          <span class="s-val num green">Rp {fmtIDR(summary.totalSaved)}</span>
+        </div>
+        <div class="stat">
+          <span class="s-label">{$i18n.totalDeficit}</span>
+          <span class="s-val num red">Rp {fmtIDR(summary.totalDeficit)}</span>
         </div>
       </div>
     {/if}
 
+    {#if adjusted.byId.size > 0}
+      <div class="carry" class:red={adjusted.carry < 0}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13M13 6l6 6-6 6"/></svg>
+        {adjusted.carry > 0
+          ? $i18n.carrySurplus(fmtIDR(adjusted.carry))
+          : $i18n.carryDeficit(fmtIDR(-adjusted.carry))}
+      </div>
+    {/if}
+
     <div class="periods">
-      {#each (cycle.periods ?? []) as period (period.id)}
-        <PeriodCard {period} onUpdate={load} />
+      {#each periods as period (period.id)}
+        <PeriodCard {period} adjusted={adjusted.byId.get(period.id) ?? null} onUpdate={load} />
       {/each}
     </div>
   {/if}
 </div>
 
 <style>
-  .view {
-    max-width: 480px;
+  .page {
+    max-width: var(--page-max);
     margin: 0 auto;
-    padding: 16px 16px 48px;
-  }
-  .topbar {
+    padding: 12px 16px calc(48px + var(--safe-bottom));
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 12px;
   }
+  .topbar { display: flex; justify-content: space-between; align-items: center; }
   .back {
+    display: inline-flex; align-items: center; gap: 2px;
     background: none;
-    font-family: var(--font-heading);
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--primary);
-    padding: 6px 0;
+    font-family: var(--font-heading); font-size: 15px; font-weight: 700;
+    color: var(--sapphire-dark);
+    padding: 8px 8px 8px 0;
   }
-  .del-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    width: 34px; height: 34px;
-    border-radius: var(--radius-xs);
+  .tools { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
     color: var(--text-muted);
     transition: background 0.15s, color 0.15s;
   }
-  .del-btn:hover { background: var(--danger-light); color: var(--danger); }
+  .icon-btn:hover { background: var(--sapphire-light); color: var(--sapphire-dark); }
+  .icon-btn.danger:hover { background: var(--danger-light); color: var(--danger); }
 
-  .cycle-header {
-    background: var(--surface);
+  .head {
+    color: #fff;
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(242,233,66,0.14), transparent 55%),
+      linear-gradient(160deg, var(--sapphire-dark), var(--sapphire-deep));
     border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow-sm);
-    border-top: 4px solid var(--primary);
+    padding: 18px;
+    box-shadow: var(--shadow-lg);
   }
-  .cycle-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 6px;
+  .head-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .mode {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 3px 10px; border-radius: 999px;
+    background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9);
   }
-  h1 {
+  .now { font-size: 12px; font-weight: 700; color: var(--banana); }
+  .now.urgent { color: #ffb4a8; }
+  h1 { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: rgba(255,255,255,0.85); }
+  .head-budget {
     font-family: var(--font-heading);
-    font-size: 17px;
-    font-weight: 800;
-    color: var(--text);
+    font-size: 32px; font-weight: 800; letter-spacing: -0.8px;
+    margin: 2px 0 14px;
   }
-  .mode-badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 20px;
-    background: var(--sapphire-light);
-    color: var(--primary);
-  }
-  .budget-label {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-  }
-  .progress-bar-wrap {
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 6px;
-  }
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--sapphire-dark), var(--primary));
-    border-radius: 3px;
-    transition: width 0.4s ease;
-  }
-  .progress-text { font-size: 12px; color: var(--text-muted); }
+  .head-progress { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 8px; }
 
-  .active-period-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 14px;
-    padding: 12px 14px;
-    background: var(--pumpkin-light);
-    border-radius: var(--radius-sm);
-    border-left: 4px solid var(--pumpkin);
-  }
-  .ap-left { display: flex; flex-direction: column; gap: 1px; }
-  .ap-label {
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.8px;
-    color: var(--pumpkin);
-  }
-  .ap-name {
-    font-family: var(--font-heading);
-    font-size: 18px; font-weight: 800;
-    color: var(--pumpkin);
-  }
-  .ap-countdown {
-    font-family: var(--font-heading);
-    font-size: 15px; font-weight: 700;
-    color: var(--pumpkin);
-  }
-  .ap-countdown.urgent { color: var(--danger); }
-
-  .summary-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .summary-card {
-    background: var(--surface);
-    border-radius: var(--radius-sm);
+  .next-card {
+    display: flex; align-items: center; gap: 12px;
     padding: 14px;
-    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-sm);
+    background: var(--banana-light); border: 1px solid #eee7a1;
   }
-  .summary-card.green { background: var(--success-light); }
-  .summary-card.red   { background: var(--danger-light);  }
-
-  .s-label {
-    font-size: 11px; font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin-bottom: 4px;
+  .next-card div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .next-card strong { font-family: var(--font-heading); font-size: 14px; }
+  .next-card small { font-size: 12px; color: var(--text-muted); }
+  .btn-next {
+    flex-shrink: 0;
+    font-family: var(--font-heading); font-size: 13px; font-weight: 700;
+    padding: 10px 12px; border-radius: var(--radius-xs);
+    background: var(--sapphire-dark); color: var(--banana);
   }
-  .summary-card.green .s-label { color: var(--success); }
-  .summary-card.red   .s-label { color: var(--danger);  }
-  .s-val {
-    font-family: var(--font-heading);
-    font-size: 15px; font-weight: 700;
-    color: var(--text);
+
+  .stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
   }
-  .summary-card.green .s-val { color: var(--success); }
-  .summary-card.red   .s-val { color: var(--danger);  }
+  .stat { padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat:nth-child(odd)  { border-right: 1px solid var(--border); }
+  .stat:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+  .s-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .s-val { font-family: var(--font-heading); font-size: 16px; font-weight: 700; }
+  .green { color: var(--success); }
+  .red   { color: var(--danger); }
 
-  .periods { display: flex; flex-direction: column; gap: 10px; }
+  .carry {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+    padding: 10px 12px;
+    border-radius: var(--radius-xs);
+    background: var(--success-light); color: var(--success);
+  }
+  .carry.red { background: var(--danger-light); color: var(--danger); }
+  .carry svg { flex-shrink: 0; }
 
-  .center { text-align: center; padding: 40px; color: var(--text-muted); }
+  .periods { display: flex; flex-direction: column; gap: 8px; }
+
+  .center { text-align: center; padding: 48px; color: var(--text-muted); }
   .spinner {
     display: inline-block;
     width: 28px; height: 28px;

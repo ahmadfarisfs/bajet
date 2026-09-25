@@ -363,7 +363,7 @@
     background: var(--surface);
     border-radius: var(--radius-sm);
     padding: 18px 16px;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
     border-top: 3px solid var(--sapphire-dark);
     display: flex;
     flex-direction: column;
