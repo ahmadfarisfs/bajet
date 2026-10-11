@@ -1,14 +1,70 @@
-// If VITE_API_URL is set at build time, use the real HTTP backend.
-// Otherwise fall back to localStorage so the app works on GitHub Pages
-// without any server.
+// Picks the data layer at build time:
+//   VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY → Supabase, straight from the browser
+//   VITE_API_URL                               → the old Go backend (until cutover)
+//   neither                                    → localStorage, no server at all
 
 import { getToken, signIn, signOut } from './auth.js'
 import { startSync, endSync, sessionExpired } from './sync.js'
 import { buildPeriods, calcBudgets, daysBetween, daysUntil } from './utils.js'
+import { supabase } from './supabase.js'
 
 const API_URL = import.meta.env.VITE_API_URL
 
-export const api = API_URL ? buildHttpApi(API_URL) : buildLocalApi()
+export const BACKEND = supabase ? 'supabase' : API_URL ? 'http' : null
+
+export const api =
+  BACKEND === 'supabase' ? buildSupabaseApi(supabase) :
+  BACKEND === 'http'     ? buildHttpApi(API_URL) :
+                           buildLocalApi()
+
+// ── Supabase ─────────────────────────────────────────────────────────────────
+// Reads go through row level security; writes call the functions defined in
+// supabase/schema.sql, which validate and apply the business rules.
+
+function buildSupabaseApi(sb) {
+  const CYCLE_COLUMNS = 'id, start_date, end_date, total_budget, division_mode, num_periods, created_at, periods(*)'
+  let claimed = false
+
+  async function run(query) {
+    startSync()
+    try {
+      const { data, error } = await query()
+      if (error) {
+        const { data: { session } } = await sb.auth.getSession()
+        if (!session) {
+          sessionExpired.set(true)
+          throw new Error('session_expired')
+        }
+        throw new Error(error.message)
+      }
+      return data
+    } finally {
+      endSync()
+    }
+  }
+
+  const cycleArgs = (d) => ({
+    p_start: d.start_date, p_end: d.end_date, p_total: Number(d.total_budget),
+    p_mode: d.division_mode || 'equal', p_n: d.num_periods,
+  })
+
+  return {
+    async getCycles() {
+      // Attach cycles copied from the old backend to this account (no-op once done).
+      if (!claimed) { await run(() => sb.rpc('claim_legacy_cycles')); claimed = true }
+      return run(() => sb.from('cycles').select(CYCLE_COLUMNS)
+        .order('created_at', { ascending: false })
+        .order('period_number', { referencedTable: 'periods' }))
+    },
+    getCycle: (id) => run(() => sb.from('cycles').select(CYCLE_COLUMNS).eq('id', id)
+      .order('period_number', { referencedTable: 'periods' }).single()),
+    createCycle: (d)     => run(() => sb.rpc('create_cycle', cycleArgs(d))),
+    updateCycle: (id, d) => run(() => sb.rpc('update_cycle', { p_id: Number(id), ...cycleArgs(d) })),
+    deleteCycle: (id)    => run(() => sb.from('cycles').delete().eq('id', id)),
+    checkIn: (id, d)     => run(() => sb.rpc('check_in', { p_period: Number(id), p_type: d.result_type, p_amount: Number(d.result_amount) })),
+    undoCheckIn: (id)    => run(() => sb.rpc('undo_check_in', { p_period: Number(id) })),
+  }
+}
 
 // ── HTTP API (real backend) ──────────────────────────────────────────────────
 

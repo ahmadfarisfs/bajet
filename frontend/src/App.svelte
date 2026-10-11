@@ -1,6 +1,7 @@
 <script>
   import { onMount, untrack } from 'svelte'
-  import { api } from './lib/api.js'
+  import { api, BACKEND } from './lib/api.js'
+  import { supabase, hasStoredSession, renderGoogleButton, supabaseUser } from './lib/supabase.js'
   import { isSignedIn, signIn, signOut, getUser } from './lib/auth.js'
   import { i18n, lang } from './lib/i18n.js'
   import { syncing, sessionExpired } from './lib/sync.js'
@@ -10,7 +11,7 @@
   import Overview from './components/Overview.svelte'
   import { nextCycleDraft, latestCycle } from './lib/utils.js'
 
-  const USES_BACKEND = !!import.meta.env.VITE_API_URL
+  const USES_BACKEND = !!BACKEND
 
   const CACHE_KEY = 'bajet_cycles_cache'
   function readCache() {
@@ -27,14 +28,18 @@
   let selectedCycle = $state(null)
   let cycles = $state(cached || [])
   let loadError = $state('')
-  let signedIn = $state(!USES_BACKEND || isSignedIn())
-  let user = $state(getUser())
+  let signedIn = $state(!USES_BACKEND || (BACKEND === 'supabase' ? hasStoredSession() : isSignedIn()))
+  let user = $state(BACKEND === 'supabase' ? null : getUser())
   let gSigninEl = $state(null)
   let loading = $state(!cached)
 
-  $effect(() => {
-    if (!USES_BACKEND || signedIn || !gSigninEl) return
-    function renderBtn() {
+  // Renders Google's button into `el`; onDone runs once the app has a session.
+  function renderSignIn(el, onDone) {
+    async function render() {
+      if (BACKEND === 'supabase') {
+        await renderGoogleButton(el, onDone, (e) => console.error('Sign-in failed:', e))
+        return
+      }
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: async ({ credential }) => {
@@ -47,19 +52,37 @@
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Sign-in failed')
             signIn(data.token, data)
-            signedIn = true
-            user = getUser()
+            onDone()
           } catch (e) {
             console.error('Sign-in failed:', e)
           }
         },
       })
-      window.google.accounts.id.renderButton(gSigninEl, {
-        theme: 'outline', size: 'large', shape: 'pill',
-      })
+      window.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill' })
     }
-    if (window.google) renderBtn()
-    else window.onGoogleLibraryLoad = renderBtn
+    if (window.google) render()
+    else window.onGoogleLibraryLoad = render
+  }
+
+  async function refreshUser() {
+    if (BACKEND !== 'supabase') { user = getUser(); return }
+    const { data: { session } } = await supabase.auth.getSession()
+    user = supabaseUser(session)
+    signedIn = !!session
+  }
+
+  if (BACKEND === 'supabase') {
+    refreshUser()
+    // Supabase refreshes tokens by itself; if that ever fails the session ends
+    // here, and the re-auth overlay keeps whatever the user was typing.
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && signedIn) sessionExpired.set(true)
+    })
+  }
+
+  $effect(() => {
+    if (!USES_BACKEND || signedIn || !gSigninEl) return
+    renderSignIn(gSigninEl, async () => { signedIn = true; await refreshUser() })
   })
 
   async function loadCycles() {
@@ -108,9 +131,11 @@
 
   let latestId = $derived(latestCycle(cycles)?.id ?? null)
 
-  function handleSignOut() {
-    signOut()
+  async function handleSignOut() {
     signedIn = false
+    if (BACKEND === 'supabase') await supabase.auth.signOut()
+    else signOut()
+    localStorage.removeItem(CACHE_KEY)
     user = null
     cycles = []
     view = 'list'
@@ -123,34 +148,12 @@
 
   $effect(() => {
     if (!USES_BACKEND || !$sessionExpired || !reAuthEl) return
-    function renderBtn() {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: async ({ credential }) => {
-          try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ credential }),
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Sign-in failed')
-            signIn(data.token, data)
-            sessionExpired.set(false)
-            signedIn = true
-            user = getUser()
-            loadCycles()
-          } catch (e) {
-            console.error('Re-auth failed:', e)
-          }
-        },
-      })
-      window.google.accounts.id.renderButton(reAuthEl, {
-        theme: 'outline', size: 'large', shape: 'pill',
-      })
-    }
-    if (window.google) renderBtn()
-    else window.onGoogleLibraryLoad = renderBtn
+    renderSignIn(reAuthEl, async () => {
+      sessionExpired.set(false)
+      signedIn = true
+      await refreshUser()
+      loadCycles()
+    })
   })
 </script>
 

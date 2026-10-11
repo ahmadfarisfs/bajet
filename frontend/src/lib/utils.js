@@ -83,15 +83,16 @@ export function calcDistribution(totalDays, n, mode) {
 
 // Budget per period; the last period takes the rounding remainder so the sum is exact.
 export function calcBudgets(total, n, mode) {
-  const tw = n * (n + 1) / 2
+  // Integer weights and total * w / tw, exactly as the database computes it.
+  const tw = mode === 'progresif' || mode === 'menurun' ? n * (n + 1) / 2 : n
   const weight =
-    mode === 'progresif' ? (i) => (i + 1) / tw :
-    mode === 'menurun'   ? (i) => (n - i) / tw :
-                           ()  => 1 / n
+    mode === 'progresif' ? (i) => i + 1 :
+    mode === 'menurun'   ? (i) => n - i :
+                           ()  => 1
   const budgets = Array(n).fill(0)
   let sum = 0
   for (let i = 0; i < n - 1; i++) {
-    budgets[i] = Math.floor(total * weight(i))
+    budgets[i] = Math.floor(total * weight(i) / tw)
     sum += budgets[i]
   }
   budgets[n - 1] = total - sum

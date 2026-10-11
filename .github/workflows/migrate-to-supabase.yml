@@ -1,0 +1,32 @@
+name: Migrate Neon → Supabase
+
+# One-off: copies cycles, periods and the waitlist from the old Neon database
+# into Supabase. Safe to run more than once (already-copied rows are skipped).
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   NEON_DATABASE_URL  the old DATABASE_URL (Koyeb env / Neon dashboard)
+#   SUPABASE_DB_URL    Supabase → Connect → "Session pooler" connection string
+#                      with your database password filled in. Use the pooler:
+#                      the direct db.*.supabase.co host is IPv6-only and GitHub
+#                      runners can't reach it.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Postgres client
+        run: |
+          command -v psql || (sudo apt-get update -q && sudo apt-get install -y -q postgresql-client)
+
+      - name: Copy data
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: ./scripts/migrate-neon-to-supabase.sh

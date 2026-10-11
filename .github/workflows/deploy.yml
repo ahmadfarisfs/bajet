@@ -35,8 +35,13 @@ jobs:
         working-directory: frontend
         env:
           VITE_BASE: /bajet/
-          # Set BACKEND_URL secret in repo settings after deploying the backend.
-          # Leave empty to use localStorage (no backend required).
+          # Supabase (preferred): set the SUPABASE_URL and SUPABASE_ANON_KEY
+          # repository *variables* (they're public, like Perut's config.js).
+          # While they're unset, the app keeps using the old Go backend below.
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          # Old Go backend on Koyeb; ignored once the Supabase variables are set.
+          # With neither configured the app stores data in localStorage only.
           VITE_API_URL: ${{ secrets.BACKEND_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build

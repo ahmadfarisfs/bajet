@@ -16,39 +16,60 @@ No transaction tracking. No categories. Just consistency.
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  User's browser                                         │
-│                                                         │
-│  GitHub Pages  ──── static SPA (Svelte 5 + Vite PWA)   │
-│       │                                                 │
-│       │  1. Google Sign-In popup → ID token             │
-│       │  2. API calls + "Authorization: Bearer <token>" │
-│       ▼                                                 │
-│  Koyeb (Docker)  ──── Go + Echo API server              │
-│       │                                                 │
-│       │  verifies token against Google tokeninfo        │
-│       │  DATABASE_URL (postgres)                        │
-│       ▼                                                 │
-│  Neon  ──── serverless PostgreSQL                       │
-│                                                         │
-│  GCP  ──── Google OAuth 2.0 (issues ID tokens)         │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  User's browser                                              │
+│                                                              │
+│  GitHub Pages ──── static SPA (Svelte 5 + Vite PWA)          │
+│       │                                                      │
+│       │ 1. Google Sign-In button → ID token                  │
+│       │ 2. supabase.auth.signInWithIdToken → Supabase session│
+│       │ 3. reads (RLS) + writes (SQL functions) via supabase-js
+│       ▼                                                      │
+│  Supabase "Bajet" (ap-southeast-1) ──── Postgres + Auth      │
+│     - row level security: each user reads only their data    │
+│     - create_cycle / update_cycle / check_in / undo_check_in │
+│       enforce the business rules in one transaction          │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### On every push to `main`
-1. **GitHub Actions** builds the Svelte frontend with secrets baked in as `VITE_*` env vars
-2. Built `dist/` is published to **GitHub Pages**
-3. **Koyeb** detects the push and rebuilds the Docker image from `backend/Dockerfile`
+Same approach as the Perut repo: no server of our own, so nothing sleeps and
+there is no cold start. The schema, security rules and functions live in
+[`supabase/schema.sql`](supabase/schema.sql).
 
----
+The old Go backend (`backend/`, Koyeb + Neon) still works and is used until the
+Supabase variables below are set; see **Switching to Supabase**.
+
+### On every push to `main`
+1. **GitHub Actions** builds the Svelte frontend (Supabase URL/key from repo variables)
+2. Built `dist/` is published to **GitHub Pages**
+
+## Switching to Supabase
+
+The Supabase project and schema already exist. To move over:
+
+1. **Enable Google sign-in in Supabase.** Dashboard → Authentication → Sign In /
+   Providers → Google → enable, then paste the existing Google OAuth **Client
+   ID** (the `VITE_GOOGLE_CLIENT_ID` secret) and its **Client secret** from
+   Google Cloud Console. Leave "Skip nonce check" off.
+2. **Copy the data from Neon.** Add two repository secrets: `NEON_DATABASE_URL`
+   (the old `DATABASE_URL`) and `SUPABASE_DB_URL` (Supabase → Connect →
+   *Session pooler* string with the DB password; not the direct host, which is
+   IPv6-only). Then Actions → **Migrate Neon → Supabase** → Run workflow. It is
+   safe to run again. Each person's cycles attach to them the first time they
+   sign in to the new app.
+3. **Point the app at Supabase.** Add repository *variables* (not secrets):
+   `SUPABASE_URL` = `https://ycjbdfdxuqcfyhiwcadn.supabase.co` and
+   `SUPABASE_ANON_KEY` = the project's publishable key
+   (`sb_publishable_…`, public by design). Re-run the Pages deploy.
+4. When everything looks right, delete the Koyeb service and the Neon project.
 
 ## Stack
 
-- **Backend**: Go + Echo + GORM + PostgreSQL (Neon)
-- **Frontend**: Svelte 5 + Vite + PWA
-- **Auth**: Google Sign-In (ID token, verified server-side)
-- **Hosting**: GitHub Pages (frontend) + Koyeb free tier (backend)
-- **Database**: Neon serverless PostgreSQL (free tier)
+- **Frontend**: Svelte 5 + Vite + PWA, talking to Supabase with supabase-js
+- **Database**: Supabase Postgres (free tier), schema in `supabase/schema.sql`
+- **Auth**: Google Sign-In → Supabase Auth (`signInWithIdToken`, with nonce)
+- **Hosting**: GitHub Pages
+- **Legacy** (until the switch): Go + Echo + GORM backend on Koyeb with Neon Postgres
 
 ## Development
 
