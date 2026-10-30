@@ -19,7 +19,7 @@
   let loading = $state(false)
   let error = $state('')
 
-  // After a check-in, only budget and mode may change (the backend enforces the same).
+  // After a check-in, only budget and mode may change (the store enforces the same).
   const locked = untrack(() => !!editing && (editing.periods ?? []).some(p => p.status === 'completed'))
 
   const MODES = [

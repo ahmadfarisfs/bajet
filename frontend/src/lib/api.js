@@ -1,119 +1,107 @@
-// Picks the data layer at build time:
-//   VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY → Supabase, straight from the browser
-//   VITE_API_URL                               → the old Go backend (until cutover)
-//   neither                                    → localStorage, no server at all
+// Bajet keeps all data in this browser's localStorage — no server, no account.
+// The methods return promises so the screens don't care where data lives.
+//
+// Because the browser is the only copy, Overview offers a JSON backup/restore,
+// and storage is marked persistent where the browser allows it.
 
-import { getToken, signIn, signOut } from './auth.js'
-import { startSync, endSync, sessionExpired } from './sync.js'
 import { buildPeriods, calcBudgets, daysBetween, daysUntil } from './utils.js'
-import { supabase } from './supabase.js'
 
-const API_URL = import.meta.env.VITE_API_URL
+const KEY = 'bajet_v1'
+// Copy of the cycle list the old server-backed versions kept on each device.
+const LEGACY_CACHE_KEY = 'bajet_cycles_cache'
 
-export const BACKEND = supabase ? 'supabase' : API_URL ? 'http' : null
+export const api = buildLocalApi()
 
-export const api =
-  BACKEND === 'supabase' ? buildSupabaseApi(supabase) :
-  BACKEND === 'http'     ? buildHttpApi(API_URL) :
-                           buildLocalApi()
+// Ask the browser not to clear our data under storage pressure (Safari otherwise
+// may evict sites that aren't opened for a while). Best effort; ignored if unsupported.
+try { navigator.storage?.persist?.() } catch { /* not available */ }
 
-// ── Supabase ─────────────────────────────────────────────────────────────────
-// Reads go through row level security; writes call the functions defined in
-// supabase/schema.sql, which validate and apply the business rules.
+// ── Backup format & normalisation ────────────────────────────────────────────
 
-function buildSupabaseApi(sb) {
-  const CYCLE_COLUMNS = 'id, start_date, end_date, total_budget, division_mode, num_periods, created_at, periods(*)'
-  let claimed = false
+const day = (v) => String(v ?? '').substring(0, 10)
+const isDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v)
 
-  async function run(query) {
-    startSync()
-    try {
-      const { data, error } = await query()
-      if (error) {
-        const { data: { session } } = await sb.auth.getSession()
-        if (!session) {
-          sessionExpired.set(true)
-          throw new Error('session_expired')
-        }
-        throw new Error(error.message)
-      }
-      return data
-    } finally {
-      endSync()
+// Cleans cycles from a backup file or the old server cache into the local
+// shape: plain YYYY-MM-DD dates, numeric amounts, sequential ownership.
+// Throws if the data isn't a list of Bajet cycles.
+export function normalizeCycles(list) {
+  if (!Array.isArray(list)) throw new Error('not a Bajet backup')
+  return list.map((c) => {
+    const periods = Array.isArray(c?.periods) ? c.periods : null
+    if (!periods || !isDay(day(c.start_date)) || !isDay(day(c.end_date)) || !(Number(c.total_budget) > 0)) {
+      throw new Error('not a Bajet backup')
     }
-  }
+    const id = Number(c.id)
+    return {
+      id,
+      start_date: day(c.start_date),
+      end_date: day(c.end_date),
+      total_budget: Number(c.total_budget),
+      division_mode: ['equal', 'behavioral', 'menurun', 'progresif'].includes(c.division_mode) ? c.division_mode : 'equal',
+      num_periods: Number(c.num_periods) || periods.length || 4,
+      created_at: c.created_at ?? new Date().toISOString(),
+      periods: periods
+        .map((p) => {
+          const done = p.status === 'completed'
+          return {
+            id: Number(p.id),
+            cycle_id: id,
+            period_number: Number(p.period_number),
+            start_date: day(p.start_date),
+            end_date: day(p.end_date),
+            budget: Number(p.budget),
+            status: done ? 'completed' : 'open',
+            result_type: done && p.result_type === 'defisit' ? 'defisit' : done ? 'sisa' : '',
+            result_amount: done ? Number(p.result_amount) || 0 : 0,
+            created_at: p.created_at ?? new Date().toISOString(),
+          }
+        })
+        .sort((a, b) => a.period_number - b.period_number),
+    }
+  }).sort((a, b) => a.id - b.id)
+}
 
-  const cycleArgs = (d) => ({
-    p_start: d.start_date, p_end: d.end_date, p_total: Number(d.total_budget),
-    p_mode: d.division_mode || 'equal', p_n: d.num_periods,
-  })
-
+function storeFrom(cycles) {
+  const maxId = (xs) => xs.reduce((m, x) => Math.max(m, x.id || 0), 0)
   return {
-    async getCycles() {
-      // Attach cycles copied from the old backend to this account (no-op once done).
-      if (!claimed) { await run(() => sb.rpc('claim_legacy_cycles')); claimed = true }
-      return run(() => sb.from('cycles').select(CYCLE_COLUMNS)
-        .order('created_at', { ascending: false })
-        .order('period_number', { referencedTable: 'periods' }))
-    },
-    getCycle: (id) => run(() => sb.from('cycles').select(CYCLE_COLUMNS).eq('id', id)
-      .order('period_number', { referencedTable: 'periods' }).single()),
-    createCycle: (d)     => run(() => sb.rpc('create_cycle', cycleArgs(d))),
-    updateCycle: (id, d) => run(() => sb.rpc('update_cycle', { p_id: Number(id), ...cycleArgs(d) })),
-    deleteCycle: (id)    => run(() => sb.from('cycles').delete().eq('id', id)),
-    checkIn: (id, d)     => run(() => sb.rpc('check_in', { p_period: Number(id), p_type: d.result_type, p_amount: Number(d.result_amount) })),
-    undoCheckIn: (id)    => run(() => sb.rpc('undo_check_in', { p_period: Number(id) })),
+    cycles,
+    seq: { cycle: maxId(cycles), period: maxId(cycles.flatMap(c => c.periods)) },
   }
 }
 
-// ── HTTP API (real backend) ──────────────────────────────────────────────────
+export function exportBackup() {
+  const { cycles } = JSON.parse(localStorage.getItem(KEY) || 'null') ?? { cycles: [] }
+  return JSON.stringify({ app: 'bajet', version: 1, exported_at: new Date().toISOString(), cycles }, null, 2)
+}
 
-function buildHttpApi(base) {
-  async function req(method, path, body) {
-    startSync()
-    try {
-      const token = getToken()
-      const headers = {}
-      if (body)  headers['Content-Type']  = 'application/json'
-      if (token) headers['Authorization'] = `Bearer ${token}`
-      const res = await fetch(`${base}${path}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-      })
-      if (res.status === 401) {
-        signOut()
-        sessionExpired.set(true)
-        throw new Error('session_expired')
-      }
-      // Sliding session: backend sends a fresh token when the current one is
-      // within 7 days of expiry. Store it silently — user stays signed in.
-      const refreshed = res.headers.get('X-Refresh-Token')
-      if (refreshed) signIn(refreshed)
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
-      return data
-    } finally {
-      endSync()
-    }
-  }
+// Replaces everything with the cycles in a backup file. Returns the cycle count.
+export function restoreBackup(text) {
+  let parsed
+  try { parsed = JSON.parse(text) } catch { throw new Error('not a Bajet backup') }
+  const cycles = normalizeCycles(Array.isArray(parsed) ? parsed : parsed?.cycles)
+  localStorage.setItem(KEY, JSON.stringify(storeFrom(cycles)))
+  return cycles.length
+}
 
-  return {
-    getCycles:   ()         => req('GET',    '/api/cycles'),
-    getCycle:    (id)       => req('GET',    `/api/cycles/${id}`),
-    createCycle: (data)     => req('POST',   '/api/cycles', data),
-    updateCycle: (id, data) => req('PUT',    `/api/cycles/${id}`, data),
-    deleteCycle: (id)       => req('DELETE', `/api/cycles/${id}`),
-    checkIn:     (id, data) => req('POST',   `/api/periods/${id}/checkin`, data),
-    undoCheckIn: (id)       => req('DELETE', `/api/periods/${id}/checkin`),
+// One-time move for devices that used the server-backed app: if there's no
+// local data yet but the old cycle cache exists, adopt it. Returns the count.
+export function importLegacyCache() {
+  try {
+    if (localStorage.getItem(KEY)) return 0
+    const cached = JSON.parse(localStorage.getItem(LEGACY_CACHE_KEY) || 'null')
+    if (!Array.isArray(cached) || !cached.length) return 0
+    const cycles = normalizeCycles(cached)
+    localStorage.setItem(KEY, JSON.stringify(storeFrom(cycles)))
+    localStorage.removeItem(LEGACY_CACHE_KEY)
+    return cycles.length
+  } catch {
+    return 0
   }
 }
 
-// ── localStorage API (client-side fallback) ──────────────────────────────────
+// ── Local store ──────────────────────────────────────────────────────────────
 
 function buildLocalApi() {
-  const KEY = 'bajet_v1'
-
   function load() {
     try {
       return JSON.parse(localStorage.getItem(KEY) || 'null') ||
@@ -136,7 +124,7 @@ function buildLocalApi() {
     }))
   }
 
-  // Same rules as the backend's parseCycleRequest. Returns [values, errorMessage].
+  // Validates and fills defaults. Returns [values, errorMessage].
   function validate({ start_date, end_date, total_budget, division_mode, num_periods }) {
     if (!start_date || !end_date) return [null, 'invalid dates']
     if (daysBetween(start_date, end_date) < 2) return [null, 'end_date must be after start_date']

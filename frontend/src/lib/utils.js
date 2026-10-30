@@ -66,7 +66,7 @@ export function daysBetween(start, end) {
   return Math.round((parseDay(end) - parseDay(start)) / 86400000) + 1
 }
 
-// ── Period math (mirrors backend/handlers/cycles.go) ─────────────────────────
+// ── Period math ──────────────────────────────────────────────────────────────
 
 // Splits totalDays into n periods; callers guarantee totalDays >= n.
 export function calcDistribution(totalDays, n, mode) {
@@ -83,7 +83,7 @@ export function calcDistribution(totalDays, n, mode) {
 
 // Budget per period; the last period takes the rounding remainder so the sum is exact.
 export function calcBudgets(total, n, mode) {
-  // Integer weights and total * w / tw, exactly as the database computes it.
+  // Integer weights and total * w / tw, so the split never drifts from rounding.
   const tw = mode === 'progresif' || mode === 'menurun' ? n * (n + 1) / 2 : n
   const weight =
     mode === 'progresif' ? (i) => i + 1 :

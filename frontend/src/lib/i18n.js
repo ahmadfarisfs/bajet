@@ -10,9 +10,6 @@ lang.subscribe(l => { try { localStorage.setItem('bajet_lang', l) } catch {} })
 const s = {
   en: {
     // App shell
-    signOut:       'Sign out',
-    cannotConnect: 'Cannot connect to server.',
-    tryAgain:      'Try again',
     cyclesTab:     'Cycles',
     overviewTab:   'Overview',
 
@@ -118,6 +115,13 @@ const s = {
     icsBody:       (n, amt) => `Last day of P${n} (budget Rp ${amt}). Open Bajet to check in.`,
     exportCsv:     'Export CSV',
     exportHint:    'Download every cycle and check-in as a spreadsheet backup.',
+    dataTitle:     'Your data',
+    dataHint:      'Saved only on this device. Download a backup now and then, and restore it on a new phone.',
+    backupBtn:     'Backup',
+    restoreBtn:    'Restore',
+    restoreConfirm:'Restoring replaces all cycles on this device with the backup. Continue?',
+    restoreDone:   (n) => `Restored ${n} cycle${n === 1 ? '' : 's'}.`,
+    restoreFailed: 'That file is not a Bajet backup.',
 
     // Overview
     heroSaved:     '🎉 Total saved',
@@ -138,8 +142,6 @@ const s = {
     legendDeficit: 'Deficit',
     noData:              'No data yet',
     noDataSub:           'Complete at least one period to see your summary here.',
-    sessionExpiredTitle: 'Session Expired',
-    sessionExpiredSub:   'Your session has expired. Please sign in again to continue — your data is safe.',
 
     // Behavior analysis
     behaviorTitle:          'Behavioral Analysis',
@@ -176,9 +178,6 @@ const s = {
 
   id: {
     // App shell
-    signOut:       'Keluar',
-    cannotConnect: 'Tidak dapat terhubung ke server.',
-    tryAgain:      'Coba lagi',
     cyclesTab:     'Cycle',
     overviewTab:   'Overview',
 
@@ -284,6 +283,13 @@ const s = {
     icsBody:       (n, amt) => `Hari terakhir P${n} (budget Rp ${amt}). Buka Bajet untuk check-in.`,
     exportCsv:     'Ekspor CSV',
     exportHint:    'Unduh semua cycle dan check-in sebagai cadangan spreadsheet.',
+    dataTitle:     'Data kamu',
+    dataHint:      'Tersimpan hanya di perangkat ini. Unduh cadangan sesekali, lalu pulihkan di HP baru.',
+    backupBtn:     'Cadangkan',
+    restoreBtn:    'Pulihkan',
+    restoreConfirm:'Memulihkan akan mengganti semua cycle di perangkat ini dengan isi cadangan. Lanjutkan?',
+    restoreDone:   (n) => `${n} cycle dipulihkan.`,
+    restoreFailed: 'File itu bukan cadangan Bajet.',
 
     // Overview
     heroSaved:     '🎉 Total kamu hemat',
@@ -304,8 +310,6 @@ const s = {
     legendDeficit: 'Kurang (defisit)',
     noData:              'Belum ada data',
     noDataSub:           'Selesaikan minimal satu periode untuk melihat ringkasan di sini.',
-    sessionExpiredTitle: 'Sesi Berakhir',
-    sessionExpiredSub:   'Sesi kamu telah berakhir. Masuk lagi untuk melanjutkan — datamu aman.',
 
     // Behavior analysis
     behaviorTitle:          'Analisis Perilaku',

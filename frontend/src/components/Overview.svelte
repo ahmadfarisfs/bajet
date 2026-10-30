@@ -3,13 +3,34 @@
   import { i18n } from '../lib/i18n.js'
   import BehaviorAnalysis from './BehaviorAnalysis.svelte'
   import { cyclesToCsv, downloadFile } from '../lib/export.js'
+  import { exportBackup, restoreBackup } from '../lib/api.js'
   import { todayStr } from '../lib/utils.js'
+
+  let { cycles, onDataChanged } = $props()
+
+  let restoreInput = $state(null)
+  let dataMsg = $state('')
+  let dataErr = $state(false)
 
   function exportCsv() {
     downloadFile(`bajet-${todayStr()}.csv`, cyclesToCsv(cycles), 'text/csv;charset=utf-8')
   }
-
-  let { cycles } = $props()
+  function backup() {
+    downloadFile(`bajet-backup-${todayStr()}.json`, exportBackup(), 'application/json')
+  }
+  async function restore(e) {
+    const file = e.currentTarget.files?.[0]
+    e.currentTarget.value = ''
+    if (!file) return
+    if (cycles.length && !confirm($i18n.restoreConfirm)) return
+    try {
+      const n = restoreBackup(await file.text())
+      dataErr = false; dataMsg = $i18n.restoreDone(n)
+      onDataChanged?.()
+    } catch {
+      dataErr = true; dataMsg = $i18n.restoreFailed
+    }
+  }
 
   let stats = $derived.by(() => {
     let totalSaved = 0, totalDeficit = 0, totalBudget = 0, periodsCompleted = 0, sisaCount = 0
@@ -178,18 +199,30 @@
   <!-- Behavior analysis -->
   <BehaviorAnalysis {cycles} />
 
-  {#if cycles.length > 0}
-    <div class="export-card">
-      <div class="export-text">
-        <strong>{$i18n.exportCsv}</strong>
-        <small>{$i18n.exportHint}</small>
-      </div>
-      <button class="btn-export" onclick={exportCsv}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
-        CSV
-      </button>
+  <!-- Data lives only in this browser: backup / restore / CSV -->
+  <div class="data-card">
+    <div class="export-text">
+      <strong>{$i18n.dataTitle}</strong>
+      <small>{$i18n.dataHint}</small>
     </div>
-  {/if}
+    <div class="data-actions">
+      {#if cycles.length > 0}
+        <button class="btn-export primary" onclick={backup}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          {$i18n.backupBtn}
+        </button>
+      {/if}
+      <button class="btn-export" onclick={() => restoreInput.click()}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5"/><path d="M5 3h14"/></svg>
+        {$i18n.restoreBtn}
+      </button>
+      {#if cycles.length > 0}
+        <button class="btn-export" onclick={exportCsv} title={$i18n.exportHint}>CSV</button>
+      {/if}
+      <input type="file" accept="application/json,.json" hidden bind:this={restoreInput} onchange={restore} />
+    </div>
+    {#if dataMsg}<p class="data-msg" class:err={dataErr}>{dataMsg}</p>{/if}
+  </div>
 
   <!-- Empty state -->
   {#if cycles.length === 0 || stats.periodsCompleted === 0}
@@ -450,16 +483,20 @@
   .legend-dot.neg { background: var(--danger);  }
 
   /* ── Export ── */
-  .export-card {
+  .data-card {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 12px;
     padding: 14px 16px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
   }
-  .export-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .data-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-export.primary { background: var(--sapphire-dark); color: var(--banana); }
+  .data-msg { font-size: 13px; font-weight: 600; color: var(--success); }
+  .data-msg.err { color: var(--danger); }
+  .export-text { display: flex; flex-direction: column; gap: 2px; }
   .export-text strong { font-family: var(--font-heading); font-size: 14px; }
   .export-text small { font-size: 12px; color: var(--text-muted); }
   .btn-export {
