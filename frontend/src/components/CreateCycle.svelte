@@ -15,6 +15,7 @@
   let endDate      = $state(day(seed.end_date) ?? addDays(todayStr(), 29))
   let totalBudget  = $state(seed.total_budget ?? 2000000)
   let divisionMode = $state(seed.division_mode ?? 'equal')
+  let carryMode    = $state(seed.carry_mode ?? 'spread')
   let numPeriods   = $state(seed.num_periods || (seed.periods ?? []).length || 4)
   let loading = $state(false)
   let error = $state('')
@@ -27,6 +28,12 @@
     { key: 'behavioral', title: 'modeBehav',     sub: 'modeBehavSub' },
     { key: 'menurun',    title: 'modeMenurun',   sub: 'modeMenurunSub' },
     { key: 'progresif',  title: 'modeProgresif', sub: 'modeProgrSub' },
+  ]
+
+  const CARRY = [
+    { key: 'spread', title: 'carrySpread', sub: 'carrySpreadSub' },
+    { key: 'save',   title: 'carrySave',   sub: 'carrySaveSub' },
+    { key: 'none',   title: 'carryNone',   sub: 'carryNoneSub' },
   ]
 
   let n = $derived(Math.min(Math.max(Math.round(Number(numPeriods)) || 1, 1), 12))
@@ -49,6 +56,7 @@
       end_date: endDate,
       total_budget: Number(totalBudget),
       division_mode: divisionMode,
+      carry_mode: carryMode,
       num_periods: n,
     }
     try {
@@ -108,6 +116,18 @@
       <div class="modes">
         {#each MODES as m}
           <button type="button" class="mode" class:active={divisionMode === m.key} onclick={() => divisionMode = m.key}>
+            <strong>{$i18n[m.title]}</strong>
+            <small>{$i18n[m.sub]}</small>
+          </button>
+        {/each}
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">{$i18n.carryMode}</span>
+      <div class="modes carry-modes">
+        {#each CARRY as m}
+          <button type="button" class="mode" class:active={carryMode === m.key} onclick={() => carryMode = m.key}>
             <strong>{$i18n[m.title]}</strong>
             <small>{$i18n[m.sub]}</small>
           </button>
@@ -209,6 +229,7 @@
   }
 
   .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .carry-modes { grid-template-columns: 1fr 1fr 1fr; }
   .mode {
     display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
     text-align: left;
