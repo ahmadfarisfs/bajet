@@ -13,7 +13,7 @@
     if (!activeCycle) return null
     const cp = activePeriod(activeCycle.periods ?? [])
     if (!cp) return null
-    const adj = adjustedBudgets(activeCycle.periods).byId.get(cp.id)
+    const adj = adjustedBudgets(activeCycle.periods, activeCycle.carry_mode).byId.get(cp.id)
     return { cycle: activeCycle, period: cp, budget: adj ?? cp.budget, adjusted: adj != null && adj !== cp.budget }
   })
 

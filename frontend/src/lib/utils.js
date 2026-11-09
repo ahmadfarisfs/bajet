@@ -114,20 +114,31 @@ export function buildPeriods(startDate, endDate, total, mode, n) {
 
 // ── Adjusted budget ──────────────────────────────────────────────────────────
 
-// Spreads the running surplus/deficit of completed periods over the periods
-// still open, in proportion to their planned budgets, so the cycle still lands
-// on its total. Returns { carry, byId: Map(periodId → adjusted budget) }.
-export function adjustedBudgets(periods) {
+export const CARRY_MODES = ['spread', 'save', 'none']
+
+// Adjusts the budgets of the periods still open based on completed periods'
+// results, following the cycle's carry mode:
+//   spread – surplus and deficit are both spread over the open periods
+//   save   – surplus is set aside as savings; only deficit is taken from open periods
+//   none   – every period keeps its planned budget
+// Amounts are shared in proportion to the open periods' planned budgets.
+// Returns { carry, saved, byId: Map(periodId → adjusted budget) }.
+export function adjustedBudgets(periods, carryMode = 'spread') {
   const list = periods ?? []
-  let carry = 0
+  let surplus = 0, deficit = 0
   for (const p of list) {
     if (p.status !== 'completed') continue
-    carry += p.result_type === 'sisa' ? p.result_amount : -p.result_amount
+    if (p.result_type === 'sisa') surplus += p.result_amount
+    else deficit += p.result_amount
   }
+  const byId = new Map()
+  if (carryMode === 'none') return { carry: 0, saved: 0, byId }
+  const saved = carryMode === 'save' ? surplus : 0
+  const carry = carryMode === 'save' ? -deficit : surplus - deficit
+
   const open = list.filter(p => p.status !== 'completed')
   const openTotal = open.reduce((s, p) => s + p.budget, 0)
-  const byId = new Map()
-  if (!carry || !open.length || openTotal <= 0) return { carry, byId }
+  if (!carry || !open.length || openTotal <= 0) return { carry, saved, byId }
 
   let given = 0
   open.forEach((p, i) => {
@@ -135,7 +146,7 @@ export function adjustedBudgets(periods) {
     given += share
     byId.set(p.id, Math.max(0, p.budget + share))
   })
-  return { carry, byId }
+  return { carry, saved, byId }
 }
 
 // ── Cycle lifecycle ──────────────────────────────────────────────────────────
@@ -181,6 +192,7 @@ export function nextCycleDraft(cycle) {
     end_date: nextEnd,
     total_budget: cycle.total_budget,
     division_mode: cycle.division_mode,
+    carry_mode: cycle.carry_mode || 'spread',
     num_periods: cycle.num_periods || (cycle.periods ?? []).length || 4,
   }
 }

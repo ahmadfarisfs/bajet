@@ -87,13 +87,21 @@ const s = {
     editBtn:       'Edit',
     saveChanges:   'Save Changes',
     saving:        'Saving…',
-    lockedHint:    'Dates and number of periods are locked after the first check-in. Budget and mode can still change.',
+    lockedHint:    'Dates and number of periods are locked after the first check-in. Budget, mode and leftover handling can still change.',
 
     // Adjusted budget
     planned:       'Planned',
     adjusted:      'Adjusted',
     carrySurplus:  (amt) => `Rp ${amt} surplus spread over the remaining periods`,
     carryDeficit:  (amt) => `Rp ${amt} deficit taken from the remaining periods`,
+    carrySaved:    (amt) => `Rp ${amt} surplus saved, not added to later periods`,
+    carryMode:     'Leftover Handling',
+    carrySpread:   'Spread',
+    carrySpreadSub:'Surplus & deficit carry over',
+    carrySave:     'Save surplus',
+    carrySaveSub:  'Only deficit carries over',
+    carryNone:     'No carry',
+    carryNoneSub:  'Budgets stay as planned',
 
     // Next cycle
     cycleFinished:   'This cycle is finished',
@@ -255,13 +263,21 @@ const s = {
     editBtn:       'Ubah',
     saveChanges:   'Simpan Perubahan',
     saving:        'Menyimpan…',
-    lockedHint:    'Tanggal dan jumlah periode terkunci setelah check-in pertama. Budget dan mode masih bisa diubah.',
+    lockedHint:    'Tanggal dan jumlah periode terkunci setelah check-in pertama. Budget, mode, dan pengelolaan sisa masih bisa diubah.',
 
     // Adjusted budget
     planned:       'Rencana',
     adjusted:      'Disesuaikan',
     carrySurplus:  (amt) => `Sisa Rp ${amt} dibagi ke periode berikutnya`,
     carryDeficit:  (amt) => `Defisit Rp ${amt} diambil dari periode berikutnya`,
+    carrySaved:    (amt) => `Sisa Rp ${amt} ditabung, tidak ditambahkan ke periode berikutnya`,
+    carryMode:     'Pengelolaan Sisa',
+    carrySpread:   'Dibagi',
+    carrySpreadSub:'Sisa & defisit dibawa',
+    carrySave:     'Tabung sisa',
+    carrySaveSub:  'Hanya defisit dibawa',
+    carryNone:     'Tanpa bawa',
+    carryNoneSub:  'Budget tetap sesuai rencana',
 
     // Next cycle
     cycleFinished:   'Cycle ini sudah selesai',

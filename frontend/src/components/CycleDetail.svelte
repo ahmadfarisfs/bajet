@@ -49,11 +49,12 @@
   // would make every successful load trigger another one.
   $effect(() => { cycleId; untrack(load) })
 
+  const CARRY_KEY = { spread: 'carrySpread', save: 'carrySave', none: 'carryNone' }
   const MODE_KEY = { equal: 'modeEqual', behavioral: 'modeBehav', menurun: 'modeMenurun', progresif: 'modeProgresif' }
 
   let periods   = $derived(cycle?.periods ?? [])
   let summary   = $derived(cycleSummary(periods))
-  let adjusted  = $derived(adjustedBudgets(periods))
+  let adjusted  = $derived(adjustedBudgets(periods, cycle?.carry_mode))
   let completed = $derived(periods.filter(p => p.status === 'completed').length)
   let total     = $derived(periods.length)
   let isCurrent = $derived(cycle ? isActive(cycle.start_date, cycle.end_date) : false)
@@ -92,7 +93,7 @@
   {:else if cycle}
     <div class="head">
       <div class="head-row">
-        <span class="mode">{$i18n[MODE_KEY[cycle.division_mode] ?? 'modeEqual']}</span>
+        <span class="mode">{$i18n[MODE_KEY[cycle.division_mode] ?? 'modeEqual']} · {$i18n[CARRY_KEY[cycle.carry_mode] ?? 'carrySpread']}</span>
         {#if isCurrent && cp && cp.status === 'open'}
           {@const left = daysLeft(cp.end_date)}
           <span class="now" class:urgent={left <= 1}>P{cp.period_number} · {left <= 0 ? $i18n.lastDay : $i18n.daysLeftN(left)}</span>
@@ -134,6 +135,13 @@
           <span class="s-label">{$i18n.totalDeficit}</span>
           <span class="s-val num red">Rp {fmtIDR(summary.totalDeficit)}</span>
         </div>
+      </div>
+    {/if}
+
+    {#if adjusted.saved > 0}
+      <div class="carry">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/></svg>
+        {$i18n.carrySaved(fmtIDR(adjusted.saved))}
       </div>
     {/if}
 

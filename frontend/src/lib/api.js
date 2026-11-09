@@ -4,7 +4,7 @@
 // Because the browser is the only copy, Overview offers a JSON backup/restore,
 // and storage is marked persistent where the browser allows it.
 
-import { buildPeriods, calcBudgets, daysBetween, daysUntil } from './utils.js'
+import { buildPeriods, calcBudgets, daysBetween, daysUntil, CARRY_MODES } from './utils.js'
 
 const KEY = 'bajet_v1'
 // Copy of the cycle list the old server-backed versions kept on each device.
@@ -38,6 +38,7 @@ export function normalizeCycles(list) {
       end_date: day(c.end_date),
       total_budget: Number(c.total_budget),
       division_mode: ['equal', 'behavioral', 'menurun', 'progresif'].includes(c.division_mode) ? c.division_mode : 'equal',
+      carry_mode: CARRY_MODES.includes(c.carry_mode) ? c.carry_mode : 'spread',
       num_periods: Number(c.num_periods) || periods.length || 4,
       created_at: c.created_at ?? new Date().toISOString(),
       periods: periods
@@ -125,13 +126,14 @@ function buildLocalApi() {
   }
 
   // Validates and fills defaults. Returns [values, errorMessage].
-  function validate({ start_date, end_date, total_budget, division_mode, num_periods }) {
+  function validate({ start_date, end_date, total_budget, division_mode, carry_mode, num_periods }) {
     if (!start_date || !end_date) return [null, 'invalid dates']
     if (daysBetween(start_date, end_date) < 2) return [null, 'end_date must be after start_date']
     if (!(Number(total_budget) > 0)) return [null, 'total_budget must be greater than 0']
     const n = num_periods >= 1 && num_periods <= 12 ? Math.round(num_periods) : 4
     if (daysBetween(start_date, end_date) < n) return [null, 'date range is shorter than the number of periods']
-    return [{ start_date, end_date, total_budget: Number(total_budget), division_mode: division_mode || 'equal', num_periods: n }, '']
+    return [{ start_date, end_date, total_budget: Number(total_budget), division_mode: division_mode || 'equal',
+      carry_mode: CARRY_MODES.includes(carry_mode) ? carry_mode : 'spread', num_periods: n }, '']
   }
 
   const ok   = (v)   => Promise.resolve(v)
