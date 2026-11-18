@@ -4,7 +4,7 @@
 // Because the browser is the only copy, Overview offers a JSON backup/restore,
 // and storage is marked persistent where the browser allows it.
 
-import { buildPeriods, calcBudgets, daysBetween, daysUntil, CARRY_MODES } from './utils.js'
+import { buildPeriods, calcBudgets, daysBetween, daysUntil, CARRY_MODES, adjustedBudgets } from './utils.js'
 
 const KEY = 'bajet_v1'
 // Copy of the cycle list the old server-backed versions kept on each device.
@@ -137,6 +137,16 @@ function buildLocalApi() {
       carry_mode: CARRY_MODES.includes(carry_mode) ? carry_mode : 'spread', num_periods: n }, '']
   }
 
+  // Saves the current budget of every checked-in period that has none yet
+  // (check-ins from older versions), so changing another period's check-in
+  // only moves the periods still open, never ones already checked in.
+  function lockTargets(cycle) {
+    const { targets } = adjustedBudgets(cycle.periods, cycle.carry_mode)
+    for (const p of cycle.periods) {
+      if (p.status === 'completed' && !(p.target > 0)) p.target = targets.get(p.id) ?? p.budget
+    }
+  }
+
   const ok   = (v)   => Promise.resolve(v)
   const fail = (msg) => Promise.reject(new Error(msg))
 
@@ -208,6 +218,7 @@ function buildLocalApi() {
         if (p) {
           if (p.status === 'completed') return fail('period already completed')
           if (daysUntil(p.start_date) > 0) return fail('period has not started yet')
+          lockTargets(cycle)
           p.status = 'completed'; p.result_type = result_type
           p.result_amount = Number(result_amount)
           if (Number(target) > 0) p.target = Number(target); else delete p.target
@@ -222,6 +233,7 @@ function buildLocalApi() {
       for (const cycle of data.cycles) {
         const p = cycle.periods.find(p => p.id === Number(periodId))
         if (p) {
+          lockTargets(cycle)
           p.status = 'open'; p.result_type = ''; p.result_amount = 0
           delete p.target
           persist(data); return ok(p)
