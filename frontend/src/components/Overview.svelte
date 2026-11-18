@@ -51,7 +51,7 @@
   let chartData = $derived.by(() => {
     return cycles
       .map(c => {
-        const s = cycleSummary(c.periods ?? [])
+        const s = cycleSummary(c.periods ?? [], c.carry_mode)
         const done = (c.periods ?? []).filter(p => p.status === 'completed').length
         return { cycle: c, summary: s, done }
       })

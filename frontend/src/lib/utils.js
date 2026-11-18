@@ -116,37 +116,58 @@ export function buildPeriods(startDate, endDate, total, mode, n) {
 
 export const CARRY_MODES = ['spread', 'save', 'none']
 
-// Adjusts the budgets of the periods still open based on completed periods'
-// results, following the cycle's carry mode:
-//   spread – surplus and deficit are both spread over the open periods
-//   save   – surplus is set aside as savings; only deficit is taken from open periods
+// Works out each period's actual budget (its "target"): the planned budget plus
+// its share of what earlier periods left over or overspent, following the
+// cycle's carry mode:
+//   spread – surplus and deficit are both passed on to later periods
+//   save   – surplus is set aside as savings; only deficit is passed on
 //   none   – every period keeps its planned budget
-// Amounts are shared in proportion to the open periods' planned budgets.
-// Returns { carry, saved, byId: Map(periodId → adjusted budget) }.
+// A check-in stores the period's target at that moment (`target`) and its result
+// is measured against it. Older check-ins without one get the target the old
+// version displayed when periods were checked in in order. Shares
+// are in proportion to the later periods' planned budgets.
+// Returns {
+//   targets: Map(periodId → actual budget) for every period,
+//   byId:    Map(periodId → adjusted budget) for open periods that changed,
+//   carry:   total passed on to the open periods,
+//   saved:   surplus set aside (save mode),
+// }
 export function adjustedBudgets(periods, carryMode = 'spread') {
-  const list = periods ?? []
-  let surplus = 0, deficit = 0
-  for (const p of list) {
-    if (p.status !== 'completed') continue
-    if (p.result_type === 'sisa') surplus += p.result_amount
-    else deficit += p.result_amount
-  }
-  const byId = new Map()
-  if (carryMode === 'none') return { carry: 0, saved: 0, byId }
-  const saved = carryMode === 'save' ? surplus : 0
-  const carry = carryMode === 'save' ? -deficit : surplus - deficit
+  const list = [...(periods ?? [])].sort((x, y) => x.period_number - y.period_number)
+  const targets = new Map(), byId = new Map()
+  let pending = 0, saved = 0, carry = 0
+  // Older versions showed an open period its planned budget plus a share of
+  // the earlier results only; check-ins made then were measured against that.
+  let legacy = 0
+  let rest = list.reduce((s, p) => s + p.budget, 0)
 
-  const open = list.filter(p => p.status !== 'completed')
-  const openTotal = open.reduce((s, p) => s + p.budget, 0)
-  if (!carry || !open.length || openTotal <= 0) return { carry, saved, byId }
+  list.forEach((p, i) => {
+    const done = p.status === 'completed'
+    const spreadOf = (amt) => i === list.length - 1 || rest <= 0 ? amt : Math.round(amt * p.budget / rest)
+    let share = 0
+    if (done && p.target > 0) share = p.target - p.budget      // budget it had at check-in
+    else if (done)            share = legacy ? spreadOf(legacy) : 0
+    else if (pending)         share = spreadOf(pending)
+    pending -= share
+    rest -= p.budget
+    const target = Math.max(0, p.budget + share)
+    targets.set(p.id, target)
 
-  let given = 0
-  open.forEach((p, i) => {
-    const share = i === open.length - 1 ? carry - given : Math.round(carry * p.budget / openTotal)
-    given += share
-    byId.set(p.id, Math.max(0, p.budget + share))
+    if (!done) {
+      carry += share
+      if (share) byId.set(p.id, target)
+      return
+    }
+    if (carryMode === 'none') return
+    let counted = -p.result_amount
+    if (p.result_type === 'sisa') {
+      if (carryMode === 'save') { saved += p.result_amount; counted = 0 }
+      else counted = p.result_amount
+    }
+    pending += counted
+    legacy += counted
   })
-  return { carry, saved, byId }
+  return { carry, saved, byId, targets }
 }
 
 // ── Cycle lifecycle ──────────────────────────────────────────────────────────
@@ -207,16 +228,18 @@ export function latestCycle(cycles) {
   return [...(cycles ?? [])].sort((a, b) => parseDay(b.end_date) - parseDay(a.end_date))[0] ?? null
 }
 
-export function cycleSummary(periods) {
+export function cycleSummary(periods, carryMode) {
+  const { targets } = adjustedBudgets(periods, carryMode)
   let totalSaved = 0, totalDeficit = 0, totalSpent = 0
-  for (const p of periods) {
+  for (const p of periods ?? []) {
     if (p.status !== 'completed') continue
+    const target = targets.get(p.id) ?? p.budget
     if (p.result_type === 'sisa') {
       totalSaved += p.result_amount
-      totalSpent += p.budget - p.result_amount
+      totalSpent += target - p.result_amount
     } else if (p.result_type === 'defisit') {
       totalDeficit += p.result_amount
-      totalSpent += p.budget + p.result_amount
+      totalSpent += target + p.result_amount
     }
   }
   return { totalSaved, totalDeficit, net: totalSaved - totalDeficit, totalSpent }

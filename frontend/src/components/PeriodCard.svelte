@@ -3,7 +3,8 @@
   import { api } from '../lib/api.js'
   import { i18n } from '../lib/i18n.js'
 
-  // `adjusted` is the budget after spreading earlier surpluses/deficits (see adjustedBudgets).
+  // `adjusted` is the period's actual budget after earlier surpluses/deficits
+  // (see adjustedBudgets); a check-in is measured against it.
   let { period, adjusted = null, onUpdate } = $props()
 
   let local    = $state({ ...period })
@@ -21,7 +22,7 @@
   let overdue   = $derived(isOverdue(local))
   let remaining = $derived(daysLeft(local.end_date))
   let startsIn  = $derived(daysUntil(local.start_date))
-  let showAdjusted = $derived(local.status === 'open' && adjusted != null && adjusted !== local.budget)
+  let showAdjusted = $derived(adjusted != null && adjusted !== local.budget)
 
   async function submit() {
     const even = resultType === 'even'
@@ -35,7 +36,7 @@
     showForm = false; amount = ''; error = ''
 
     try {
-      await api.checkIn(period.id, { result_type: type, result_amount: val })
+      await api.checkIn(period.id, { result_type: type, result_amount: val, target: adjusted ?? local.budget })
       onUpdate()
     } catch (e) {
       local = prev; showForm = true
@@ -118,6 +119,7 @@
           {$i18n.deficit}
         </button>
       </div>
+      <p class="against">{$i18n.checkinAgainst(fmtIDR(adjusted ?? local.budget))}</p>
       {#if resultType === 'even'}
         <p class="even-hint">{$i18n.evenHint}</p>
       {:else}
@@ -141,6 +143,7 @@
 </div>
 
 <style>
+  .against { font-size: 13px; color: var(--text-muted); margin: 0; }
   .card {
     background: var(--surface);
     border: 1px solid var(--border);

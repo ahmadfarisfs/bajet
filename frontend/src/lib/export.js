@@ -1,4 +1,4 @@
-import { addDays, parseDay } from './utils.js'
+import { addDays, parseDay, adjustedBudgets } from './utils.js'
 
 const day = (iso) => (iso ?? '').substring(0, 10)
 
@@ -22,18 +22,19 @@ function csvCell(v) {
 export function cyclesToCsv(cycles) {
   const header = [
     'cycle_start', 'cycle_end', 'cycle_budget', 'division_mode', 'carry_mode',
-    'period', 'period_start', 'period_end', 'period_budget',
+    'period', 'period_start', 'period_end', 'period_budget', 'actual_budget',
     'status', 'result', 'result_amount', 'net',
   ]
   const rows = [header]
   const ordered = [...(cycles ?? [])].sort((a, b) => parseDay(a.start_date) - parseDay(b.start_date))
   for (const c of ordered) {
+    const { targets } = adjustedBudgets(c.periods, c.carry_mode)
     for (const p of c.periods ?? []) {
       const done = p.status === 'completed'
       const net = !done ? '' : p.result_type === 'sisa' ? p.result_amount : -p.result_amount
       rows.push([
         day(c.start_date), day(c.end_date), c.total_budget, c.division_mode, c.carry_mode || 'spread',
-        p.period_number, day(p.start_date), day(p.end_date), p.budget,
+        p.period_number, day(p.start_date), day(p.end_date), p.budget, targets.get(p.id) ?? p.budget,
         p.status, done ? p.result_type : '', done ? p.result_amount : '', net,
       ])
     }

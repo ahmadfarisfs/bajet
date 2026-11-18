@@ -106,7 +106,7 @@
   {:else}
     <div class="cards">
       {#each cycles as cycle (cycle.id)}
-        {@const s = cycleSummary(cycle.periods ?? [])}
+        {@const s = cycleSummary(cycle.periods ?? [], cycle.carry_mode)}
         {@const done = completedCount(cycle)}
         {@const total = (cycle.periods ?? []).length}
         {@const active = isActive(cycle.start_date, cycle.end_date)}

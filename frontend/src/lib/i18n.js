@@ -71,6 +71,7 @@ const s = {
     cancel:       'Cancel',
     save:         'Save',
     checkIn:      '+ Check-in',
+    checkinAgainst: (amt) => `Budget this period: Rp ${amt}`,
 
     // Cycle detail
     back:          'Back',
@@ -247,6 +248,7 @@ const s = {
     cancel:       'Batal',
     save:         'Simpan',
     checkIn:      '+ Check-in',
+    checkinAgainst: (amt) => `Budget periode ini: Rp ${amt}`,
 
     // Cycle detail
     back:          'Kembali',

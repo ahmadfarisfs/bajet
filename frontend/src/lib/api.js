@@ -54,6 +54,7 @@ export function normalizeCycles(list) {
             status: done ? 'completed' : 'open',
             result_type: done && p.result_type === 'defisit' ? 'defisit' : done ? 'sisa' : '',
             result_amount: done ? Number(p.result_amount) || 0 : 0,
+            ...(done && Number(p.target) > 0 ? { target: Number(p.target) } : {}),
             created_at: p.created_at ?? new Date().toISOString(),
           }
         })
@@ -178,8 +179,12 @@ function buildLocalApi() {
       }
       Object.assign(cycle, v)
       if (hasCheckIns) {
+        // A saved check-in target keeps its share of earlier results on top of the new plan.
         const budgets = calcBudgets(v.total_budget, cycle.periods.length, v.division_mode)
-        cycle.periods.forEach((p, i) => { p.budget = budgets[i] })
+        cycle.periods.forEach((p, i) => {
+          if (p.target > 0) p.target = Math.max(0, p.target - p.budget + budgets[i]) || undefined
+          p.budget = budgets[i]
+        })
       } else {
         cycle.periods = buildLocalPeriods(cycle.id, v.start_date, v.end_date, v.total_budget, v.division_mode, data.seq, v.num_periods)
       }
@@ -194,7 +199,9 @@ function buildLocalApi() {
       return ok({ message: 'deleted' })
     },
 
-    checkIn(periodId, { result_type, result_amount }) {
+    // `target` is the budget the period had when checked in (after earlier
+    // surpluses/deficits); the result is measured against it.
+    checkIn(periodId, { result_type, result_amount, target }) {
       const data = load()
       for (const cycle of data.cycles) {
         const p = cycle.periods.find(p => p.id === Number(periodId))
@@ -203,6 +210,7 @@ function buildLocalApi() {
           if (daysUntil(p.start_date) > 0) return fail('period has not started yet')
           p.status = 'completed'; p.result_type = result_type
           p.result_amount = Number(result_amount)
+          if (Number(target) > 0) p.target = Number(target); else delete p.target
           persist(data); return ok(p)
         }
       }
@@ -215,6 +223,7 @@ function buildLocalApi() {
         const p = cycle.periods.find(p => p.id === Number(periodId))
         if (p) {
           p.status = 'open'; p.result_type = ''; p.result_amount = 0
+          delete p.target
           persist(data); return ok(p)
         }
       }

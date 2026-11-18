@@ -53,7 +53,7 @@
   const MODE_KEY = { equal: 'modeEqual', behavioral: 'modeBehav', menurun: 'modeMenurun', progresif: 'modeProgresif' }
 
   let periods   = $derived(cycle?.periods ?? [])
-  let summary   = $derived(cycleSummary(periods))
+  let summary   = $derived(cycleSummary(periods, cycle?.carry_mode))
   let adjusted  = $derived(adjustedBudgets(periods, cycle?.carry_mode))
   let completed = $derived(periods.filter(p => p.status === 'completed').length)
   let total     = $derived(periods.length)
@@ -156,7 +156,7 @@
 
     <div class="periods">
       {#each periods as period (period.id)}
-        <PeriodCard {period} adjusted={adjusted.byId.get(period.id) ?? null} onUpdate={load} />
+        <PeriodCard {period} adjusted={adjusted.targets.get(period.id) ?? null} onUpdate={load} />
       {/each}
     </div>
   {/if}
