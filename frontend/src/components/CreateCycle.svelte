@@ -31,9 +31,9 @@
   ]
 
   const CARRY = [
-    { key: 'spread', title: 'carrySpread', sub: 'carrySpreadSub' },
-    { key: 'save',   title: 'carrySave',   sub: 'carrySaveSub' },
-    { key: 'none',   title: 'carryNone',   sub: 'carryNoneSub' },
+    { key: 'spread', title: 'carrySpread', sub: 'carrySpreadSub', eli5: 'carrySpreadEli5' },
+    { key: 'save',   title: 'carrySave',   sub: 'carrySaveSub',   eli5: 'carrySaveEli5' },
+    { key: 'none',   title: 'carryNone',   sub: 'carryNoneSub',   eli5: 'carryNoneEli5' },
   ]
 
   let n = $derived(Math.min(Math.max(Math.round(Number(numPeriods)) || 1, 1), 12))
@@ -133,6 +133,7 @@
           </button>
         {/each}
       </div>
+      <p class="explain">{$i18n[CARRY.find(m => m.key === carryMode).eli5]}</p>
     </div>
   </section>
 
@@ -212,6 +213,11 @@
   .stepper button { height: 100%; font-size: 20px; font-weight: 600; background: var(--surface-2); color: var(--sapphire-dark); }
   .stepper button:disabled { color: var(--text-light); }
 
+  .explain {
+    margin: 8px 0 0; padding: 10px 12px;
+    font-size: 13px; line-height: 1.45; color: var(--text-muted);
+    background: var(--surface-2); border-radius: var(--radius-xs);
+  }
   .note { font-size: 12px; color: var(--pumpkin); background: var(--pumpkin-light); padding: 8px 10px; border-radius: var(--radius-xs); }
 
   .money {

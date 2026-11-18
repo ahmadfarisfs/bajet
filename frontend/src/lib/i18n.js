@@ -107,6 +107,9 @@ const s = {
     carrySaveSub:  'Only deficit carries over',
     carryNone:     'No carry',
     carryNoneSub:  'Budgets stay as planned',
+    carrySpreadEli5: 'Each period is an envelope. Money left in one goes into the next envelopes, making them bigger. Overspend, and the next envelopes get smaller to pay it back. E.g. Rp 100k left in P1 → P2, P3, P4 each get about Rp 33k more.',
+    carrySaveEli5:   'Each period is an envelope. Money left in one goes to a piggy bank — you keep it as savings and the next envelopes stay the same. Overspend, and the next envelopes still get smaller to pay it back. E.g. Rp 100k left in P1 → saved; P2–P4 unchanged.',
+    carryNoneEli5:   'Each period is an envelope that always stays the same size. Leftover or overspending is just recorded, never moved to other periods. E.g. Rp 100k left in P1 → P2–P4 unchanged.',
 
     // Next cycle
     cycleFinished:   'This cycle is finished',
@@ -288,6 +291,9 @@ const s = {
     carrySaveSub:  'Hanya defisit dibawa',
     carryNone:     'Tanpa bawa',
     carryNoneSub:  'Budget tetap sesuai rencana',
+    carrySpreadEli5: 'Anggap tiap periode itu amplop. Sisa uang di satu amplop dimasukkan ke amplop-amplop berikutnya, jadi lebih besar. Kalau kelebihan belanja, amplop berikutnya dikurangi untuk menutupnya. Contoh: sisa Rp 100rb di P1 → P2, P3, P4 masing-masing dapat ±Rp 33rb lebih.',
+    carrySaveEli5:   'Anggap tiap periode itu amplop. Sisa uang masuk celengan — jadi tabungan, amplop berikutnya tetap sama. Kalau kelebihan belanja, amplop berikutnya tetap dikurangi untuk menutupnya. Contoh: sisa Rp 100rb di P1 → ditabung; P2–P4 tidak berubah.',
+    carryNoneEli5:   'Anggap tiap periode itu amplop yang ukurannya selalu sama. Sisa atau kelebihan belanja hanya dicatat, tidak dipindah ke periode lain. Contoh: sisa Rp 100rb di P1 → P2–P4 tidak berubah.',
 
     // Next cycle
     cycleFinished:   'Cycle ini sudah selesai',
