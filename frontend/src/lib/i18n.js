@@ -12,6 +12,10 @@ const s = {
     // App shell
     cyclesTab:     'Cycles',
     overviewTab:   'Overview',
+    updateAvailable: 'New version available',
+    updateBtn:     'Update',
+    updating:      'Updating…',
+    updateLater:   'Later',
 
     // Cycle list
     myCycles:    'My Cycles',
@@ -189,6 +193,10 @@ const s = {
     // App shell
     cyclesTab:     'Cycle',
     overviewTab:   'Overview',
+    updateAvailable: 'Versi baru tersedia',
+    updateBtn:     'Perbarui',
+    updating:      'Memperbarui…',
+    updateLater:   'Nanti',
 
     // Cycle list
     myCycles:    'Cycle Saya',

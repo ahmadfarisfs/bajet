@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [
     svelte(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // New versions wait for the user to tap Update (see UpdateBanner.svelte).
+      registerType: 'prompt',
       includeAssets: ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'icon.svg'],
       manifest: {
         name: 'Bajet — Period Budgeting',

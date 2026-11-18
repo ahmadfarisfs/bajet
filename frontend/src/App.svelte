@@ -6,6 +6,7 @@
   import CycleDetail from './components/CycleDetail.svelte'
   import CreateCycle from './components/CreateCycle.svelte'
   import Overview from './components/Overview.svelte'
+  import UpdateBanner from './components/UpdateBanner.svelte'
   import { nextCycleDraft, latestCycle } from './lib/utils.js'
 
   // Devices that used the old server-backed app keep their cycles: the copy it
@@ -117,6 +118,8 @@
       </div>
     </nav>
   {/if}
+
+  <UpdateBanner raised={showTabBar} />
 </div>
 
 <style>
